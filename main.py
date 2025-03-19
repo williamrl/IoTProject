@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request, redirect, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
+from models.user import User  # Import User class
+from models.device import LightingDevice  # Import Device classes
+import bcrypt # pip insall bcrypt
+from flask import jsonify
 
 app = Flask(__name__)
 
@@ -21,19 +25,19 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    """Authenticates user and creates session"""
+    email = request.form['email']
+    password = request.form['password']
 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE email = % s AND password = % s', (email, password, ))
-        account = cursor.fetchone()
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT * FROM accounts WHERE email = %s', (email,))
+    account = cursor.fetchone()
 
-        if account:
-            session['user_id'] = account['id']
-            return redirect('/home')
-        else:
-            return redirect('/')
+    if account and bcrypt.checkpw(password.encode(), account['password'].encode()):
+        session['user_id'] = account['id']
+        return redirect('/home')
+    else:
+        return redirect('/')
         
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -41,28 +45,26 @@ def logout():
         session.pop('user_id')
         return redirect('/')
         
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'GET':
-        if 'user_id' in session:
-            return redirect('/home')
-        
-        return render_template('register.html')
+    """Handles user registration"""
+    email = request.form['email']
+    password = request.form['password']
     
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-    
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE email = % s', (email, ))
-        account = cursor.fetchone()
+    # Hash the password before storing it
+    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
-        if account:
-            return redirect('/register')
-        else:
-            cursor.execute('INSERT INTO accounts VALUES (NULL, % s, % s)',(email, password,))
-            mysql.connection.commit()
-            return redirect('/home')
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT * FROM accounts WHERE email = %s', (email,))
+    account = cursor.fetchone()
+
+    if account:
+        return redirect('/register')
+    else:
+        # Store the hashed password, NOT plaintext
+        cursor.execute('INSERT INTO accounts (email, password) VALUES (%s, %s)', (email, hashed_password))
+        mysql.connection.commit()
+        return redirect('/')
 
 
 @app.route('/home')
@@ -75,5 +77,7 @@ def home():
     account = cursor.fetchone()
 
     return render_template('home.html', username=account['email'].split('@')[0])
+
+8
 
 app.run(debug=True)
