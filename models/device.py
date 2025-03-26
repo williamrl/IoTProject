@@ -1,53 +1,64 @@
-# Base class for a generic IoT device
+import json
+
 class Device:
-    def __init__(self, device_id: str, name: str, status: bool = False):
-        # Initialize the device with an ID, name, and status (default is OFF)
-        self.device_id = device_id
+    def __init__(self, device_id, name, type, status, settings):
+        self.id = device_id
         self.name = name
-        self.status = status
+        self.type = type
+        self.status = bool(status)
+        self.settings = json.loads(settings) if settings else {}
 
-    def turn_on(self) -> None:
-        # Turn the device ON
-        self.status = True
-        print(f"{self.name} is now ON")
+    def __repr__(self):
+        return f"<Device {self.name} (Type: {self.type}) Status: {'ON' if self.status else 'OFF'} Settings: {self.settings}>"
 
-    def turn_off(self) -> None:
-        # Turn the device OFF
-        self.status = False
-        print(f"{self.name} is now OFF")
+class DeviceManager:
+    def __init__(self, db):
+        self.db = db
 
-    def get_status(self) -> bool:
-        # Return the current status of the device (ON or OFF)
-        return self.status
+    def get_device(self, name):
+        cursor = self.db.connection.cursor()
+        cursor.execute("SELECT id, name, type, status, setting FROM devices WHERE name = %s", (name,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            return Device(*row)
+        return None
 
-    def __repr__(self) -> str:
-        # String representation of the device for debugging purposes
-        return f"Device(device_id={self.device_id}, name={self.name}, status={self.status})"
+    def turn_on(self, name):
+        cursor = self.db.connection.cursor()
+        cursor.execute("UPDATE devices SET status = 1 WHERE name = %s", (name,))
+        self.db.connection.commit()
+        cursor.close()
 
+    def turn_off(self, name):
+        cursor = self.db.connection.cursor()
+        cursor.execute("UPDATE devices SET status = 0 WHERE name = %s", (name,))
+        self.db.connection.commit()
+        cursor.close()
 
-# Subclass for a lighting-specific IoT device
-class LightingDevice(Device):
-    # Default values for brightness and color
-    DEFAULT_BRIGHTNESS = 100
-    DEFAULT_COLOR = "white"
+    def toggle(self, name):
+        device = self.get_device(name)
+        if device:
+            new_status = 0 if device.status else 1
+            cursor = self.db.connection.cursor()
+            cursor.execute("UPDATE devices SET status = %s WHERE name = %s", (new_status, name))
+            self.db.connection.commit()
+            cursor.close()
 
-    def __init__(self, device_id: str, name: str, brightness: int = DEFAULT_BRIGHTNESS, color: str = DEFAULT_COLOR):
-        # Initialize the lighting device with additional attributes: brightness and color
-        super().__init__(device_id, name)
-        self.brightness = brightness
-        self.color = color
+    def change_setting(self, name, key, value):
+        device = self.get_device(name)
+        if device:
+            device.settings[key] = value  # update setting dict
+            new_settings = json.dumps(device.settings)
 
-    def set_brightness(self, level: int) -> None:
-        # Set the brightness level (must be between 0 and 100)
-        if 0 <= level <= 100:
-            self.brightness = level
-        else:
-            raise ValueError("Brightness level must be between 0 and 100")
+            cursor = self.db.connection.cursor()
+            cursor.execute("UPDATE devices SET setting = %s WHERE name = %s", (new_settings, name))
+            self.db.connection.commit()
+            cursor.close()
 
-    def set_color(self, color: str) -> None:
-        # Set the color of the lighting device
-        self.color = color
-
-    def __repr__(self) -> str:
-        # String representation of the lighting device for debugging purposes
-        return f"LightingDevice(device_id={self.device_id}, name={self.name}, status={self.status}, brightness={self.brightness}, color={self.color})"
+    def get_all_devices(self):
+        cursor = self.db.connection.cursor()
+        cursor.execute("SELECT id, name, type, status, setting FROM devices")
+        rows = cursor.fetchall()
+        cursor.close()
+        return [Device(*row) for row in rows]
