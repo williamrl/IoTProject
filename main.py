@@ -5,6 +5,7 @@ from models.user import User  # Import User class
 from models.device import LightingDevice  # Import Device classes
 from flask_mysqldb import MySQL
 from flask import jsonify
+from models.mqtt import publish_handler
 
 app = Flask(__name__)
 mysql = MySQL(app)
@@ -68,5 +69,14 @@ def home():
     username = account['email'].split('@')[0]
 
     return render_template('home.html', username=username)
+
+@app.route('/publish', methods=['POST'])
+def publish():
+    data = request.json
+    topic = data.get("topic")
+    message = data.get("message")
+    publish_handler(topic, message)
+    return jsonify({"status": "Message published"}), 200
+
 
 app.run(debug=True)
