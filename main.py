@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 from models import user_manager
+from models.database import *
 from models.user import User  # Import User class
 from models.device import LightingDevice  # Import Device classes
 from flask_mysqldb import MySQL
@@ -14,6 +15,9 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'SmartHome'
 app.config['MYSQL_PASSWORD'] = 'SmartHomePassword'
 app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
+
+with app.app_context():
+    migrate_accounts_table(mysql)
 
 @app.route('/')
 def index():
