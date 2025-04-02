@@ -54,6 +54,14 @@ def logout():
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
+@app.route('/settings', methods=['GET','POST'])
+def settings():
+    print("settings")
+    if request.method == 'GET':
+        return render_template('settings.html', message="")
+    if request.method == 'POST':
+        session.pop('user_id')
+        return redirect('/')
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     print("register")
@@ -105,5 +113,5 @@ def get_device_ids():
 def get_device_info():
     device_id = request.json.get('device_id')
     return device_manager.get_device_info(mysql, session['user_id'])
-    
+
 app.run(debug=True)
