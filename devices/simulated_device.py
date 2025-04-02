@@ -50,6 +50,18 @@ def handle_message(ch, method, properties, body):
     # Acknowledge the message to RabbitMQ
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
+def send_response(data):
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='reply.device.status')
+    channel.basic_publish(
+        exchange='',
+        routing_key='reply.device.status',
+        body=json.dumps(data)
+    )
+    connection.close()
+
+
 # Function to handle graceful shutdown on SIGINT (Ctrl+C)
 def graceful_shutdown(signal, frame):
     logger.info("Shutting down...")
