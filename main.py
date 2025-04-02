@@ -93,7 +93,7 @@ def get_device_ids():
     return device_manager.get_device_ids(mysql, session['user_id'])
 
 @app.route('/get_device_info', methods=['POST'])
-def get_device_ids():
+def get_device_info():
     device_id = request.json.get('device_id')
     return device_manager.get_device_info(mysql, session['user_id'])
 
