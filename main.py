@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, session, flash
 import re
 from models import user_manager
+from models import device_manager
 from models.database import *
 from models.user import User  # Import User class
 from flask_mysqldb import MySQL
 from flask import jsonify
-from models.mqtt import publish_handler
+from models.mqtt import *
 
 app = Flask(__name__)
 mysql = MySQL(app)
@@ -19,6 +20,7 @@ app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
 
 with app.app_context():
     migrate_accounts_table(mysql)
+    migrate_connections_table(mysql)
 
 def is_valid_email(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -48,6 +50,16 @@ def login():
     else:
         return redirect('/')
         
+
+@app.route('/login_api', methods=['POST'])
+def login_api():
+     email = request.form['email']
+     password = request.form['password']
+ 
+     id = user_manager.login(mysql, email, password)
+     
+     return id
+
 @app.route('/logout', methods=['POST'])
 def logout():
     print("logout")
