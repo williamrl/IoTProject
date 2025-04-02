@@ -58,7 +58,7 @@ def login_api():
  
      id = user_manager.login(mysql, email, password)
      
-     return id
+     return str(id)
 
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -74,6 +74,15 @@ def settings():
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
+    
+@app.route('/register_device', methods=['POST'])
+def register_device():
+    device_id = request.form['device_id']
+    user_id = request.form['user_id']
+
+    device_manager.register_device(mysql, user_id, device_id)
+    return 'added'
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     print("register")
@@ -125,5 +134,16 @@ def get_device_ids():
 def get_device_info():
     device_id = request.json.get('device_id')
     return device_manager.get_device_info(mysql, session['user_id'])
+
+@app.route('/list_devices', methods=['GET', 'POST'])
+def list_devices():
+    device_ids = device_manager.get_device_ids(mysql, session['user_id'])
+    account = user_manager.get_account(mysql, session['user_id'])
+    username = account['email'].split('@')[0]
+    message_str = username + ' has the following devices registered...<br>'
+    for device in device_ids:
+        message_str += device['device_id'] + '<br>'
+
+    return message_str
 
 app.run(debug=True)

@@ -1,4 +1,4 @@
-import pika, json, os, signal, sys, logging
+import pika, json, os, signal, sys, logging, requests
 
 # Path to the configuration file, defaults to "light001_config.json" if not set in environment variables
 CONFIG_PATH = os.getenv("CONFIG_PATH", "light001_config.json")
@@ -18,6 +18,20 @@ def load_config():
         logger.error(f"Error loading config: {e}")
         # Return a default configuration if loading fails
         return {"device_id": "unknown", "settings": {}}
+    
+def register_device(account_id):
+    requests.post('http://127.0.0.1:5000/register_device', {'user_id':account_id, 'device_id':QUEUE_NAME})
+    
+def login():
+    print(f"To use your device, please login to your account")
+    email = input("Email: ")
+    password = input("Password: ")
+    response = requests.post('http://127.0.0.1:5000/login_api', {'email':email, 'password':password})
+    if response:
+        register_device(response)
+        return True
+    print("Login failed. Please try again")
+    return False
 
 # Function to save the device configuration to a JSON file
 def save_config(config):
@@ -82,6 +96,8 @@ channel.queue_declare(queue=QUEUE_NAME)
 channel.basic_qos(prefetch_count=1)
 # Set up the consumer with the message handling callback
 channel.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
+
+while not login(): continue
 
 # Log that the device is ready and start consuming messages
 logger.info(f"[{QUEUE_NAME}] Listening for messages...")
