@@ -1,20 +1,8 @@
-import paho.mqtt.publish as publish
+import pika
 
-class Broker:
-    def connect(session):
-        pass
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
 
-    def handle_publish(topic, message):
-        pass
-
-    def handle_disconnect(topic, message):
-        pass
-
-    def handle_subscribe(session, request, topic, message):
-        pass
-
-    def handle_heartbeet():
-        pass
-
-def publish_handler(topic, message):
-    publish.single(topic, message, hostname="broker.hivemq.com", port=1883)
+def handle_publish(topic, message):
+    channel.queue_declare(queue=topic)
+    channel.basic_publish(exchange='', routing_key=topic, body=message)

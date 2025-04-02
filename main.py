@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, session
 from models import user_manager
+from models import device_manager
 from models.database import *
 from models.user import User  # Import User class
-from models.device import LightingDevice  # Import Device classes
 from flask_mysqldb import MySQL
 from flask import jsonify
-from models.mqtt import publish_handler
+from models.mqtt import *
 
 app = Flask(__name__)
 mysql = MySQL(app)
@@ -19,6 +19,7 @@ app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
 
 with app.app_context():
     migrate_accounts_table(mysql)
+    migrate_connections_table(mysql)
 
 @app.route('/')
 def index():
@@ -40,6 +41,15 @@ def login():
     else:
         return redirect('/')
         
+@app.route('/login_api', methods=['POST'])
+def login_api():
+    email = request.form['email']
+    password = request.form['password']
+
+    id = user_manager.login(mysql, email, password)
+    
+    return id
+
 @app.route('/logout', methods=['POST'])
 def logout():
     if request.method == 'POST':
@@ -73,10 +83,18 @@ def home():
 @app.route('/publish', methods=['POST'])
 def publish():
     data = request.json
-    topic = data.get("topic")
+    device_id = data.get("device_id")
     message = data.get("message")
-    publish_handler(topic, message)
+    handle_publish(f"{device_id}/{session['user_id']}", message)
     return jsonify({"status": "Message published"}), 200
 
+@app.route('/get_device_ids', methods=['POST'])
+def get_device_ids():
+    return device_manager.get_device_ids(mysql, session['user_id'])
+
+@app.route('/get_device_info', methods=['POST'])
+def get_device_ids():
+    device_id = request.json.get('device_id')
+    return device_manager.get_device_info(mysql, session['user_id'])
 
 app.run(debug=True)
