@@ -19,12 +19,14 @@ def migrate_accounts_table(mysql):
                         id INT NOT NULL AUTO_INCREMENT,
                         email VARCHAR(255) NOT NULL,
                         password VARCHAR(255) NOT NULL,
+                        nickname VARCHAR(255) NOT NULL,
                         PRIMARY KEY(id))""")
     else:
         cursor.execute("""CREATE TABLE accounts(
                             id INT NOT NULL AUTO_INCREMENT,
                             email VARCHAR(255) NOT NULL,
                             password VARCHAR(255) NOT NULL,
+                            nickname VARCHAR(255) NOT NULL,
                             PRIMARY KEY(id))""")
         
 def migrate_connections_table(mysql):
