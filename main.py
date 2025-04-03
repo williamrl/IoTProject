@@ -31,7 +31,7 @@ def index():
     print("login")
     if 'user_id' in session:
         return redirect('/home')
-    return render_template('login.html')
+    return render_template('login.html',dark_mode=session.get('dark_mode', False))
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -69,12 +69,21 @@ def logout():
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     print("settings")
+    
     if request.method == 'GET':
-        return render_template('settings.html', message="")
+        print(session.get('dark_mode', False))
+        return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     if request.method == 'POST':
+        print(session.get('dark_mode', False))
         session.pop('user_id')
         return redirect('/')
-    
+@app.route('/toggle-dark-mode', methods=['POST'])
+def toggle_dark_mode():
+    if request.method == 'POST':
+        print("toggling dark mode")
+        session['dark_mode'] = not session.get('dark_mode', False)
+        print(session.get('dark_mode', False))
+        return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
 @app.route('/register_device', methods=['POST'])
 def register_device():
     device_id = request.form['device_id']
@@ -88,35 +97,34 @@ def register():
     print("register")
     """Handles user registration"""
     if request.method == 'GET':
-        return render_template('register.html', message="")
+        return render_template('register.html', message="",dark_mode=session.get('dark_mode', False))
     elif request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         confirm = request.form['confirmpassword']
         if(not is_valid_email(email)):
             message = "Email is invalid!"
-            return render_template('register.html', message=message)
+            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
         elif(password != confirm):
             message = "Passwords do not match!"
-            return render_template('register.html', message=message)
+            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
         elif(len(password) <= 5):
             message = "Password must be 6 characters or longer!"
-            return render_template('register.html', message=message)
+            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
         elif user_manager.create_account(mysql, email, password):
             return redirect('/')
         else:
             message = "Account already exists!"
-            return render_template('register.html', message=message)
+            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
 
 @app.route('/home')
 def home():
     if 'user_id' not in session:
         return redirect('/')
-    
+    print(session.get('dark_mode', False))
     account = user_manager.get_account(mysql, session['user_id'])
     username = account['email'].split('@')[0]
-
-    return render_template('home.html', username=username)
+    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False))
 
 @app.route('/publish', methods=['POST'])
 def publish():
@@ -143,7 +151,7 @@ def list_devices():
     message_str = username + ' has the following devices registered...<br>'
     for device in device_ids:
         message_str += device['device_id'] + '<br>'
-
     return message_str
+    #return render_template('settings.html', message=message_str)
 
 app.run(debug=True)
