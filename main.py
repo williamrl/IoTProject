@@ -31,7 +31,7 @@ def index():
     print("login")
     if 'user_id' in session:
         return redirect('/home')
-    return render_template('login.html',dark_mode=session.get('dark_mode', False))
+    return render_template('login.html',message = "",dark_mode=session.get('dark_mode', False))
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -43,12 +43,15 @@ def login():
     print(password)
 
     id = user_manager.login(mysql, email, password)
-    
-    if id != None:
+    if(not is_valid_email(email)):
+            message = "Email is invalid!"
+            return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
+    elif id != None:
         session['user_id'] = id
         return redirect('/home')
     else:
-        return redirect('/')
+        message = "Email/Password is not correct!"
+        return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
         
 
 @app.route('/login_api', methods=['POST'])
