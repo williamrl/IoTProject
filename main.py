@@ -19,8 +19,7 @@ app.config['MYSQL_PASSWORD'] = 'SmartHomePassword'
 app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
 
 with app.app_context():
-    migrate_accounts_table(mysql)
-    migrate_connections_table(mysql)
+    migrate_tables(mysql)
 
 def is_valid_email(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -28,19 +27,15 @@ def is_valid_email(email):
 
 @app.route('/')
 def index():
-    print("login")
     if 'user_id' in session:
         return redirect('/home')
     return render_template('login.html',message = "",dark_mode=session.get('dark_mode', False))
 
 @app.route('/login', methods=['POST'])
 def login():
-    print("login")
     """Authenticates user and creates session"""
     email = request.form['email']
-    print(email)
     password = request.form['password']
-    print(password)
 
     id = user_manager.login(mysql, email, password)
     if(not is_valid_email(email)):
@@ -65,27 +60,20 @@ def login_api():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    print("logout")
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
 @app.route('/settings', methods=['GET','POST'])
 def settings():
-    print("settings")
-    
     if request.method == 'GET':
-        print(session.get('dark_mode', False))
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     if request.method == 'POST':
-        print(session.get('dark_mode', False))
         session.pop('user_id')
         return redirect('/')
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
     if request.method == 'POST':
-        print("toggling dark mode")
         session['dark_mode'] = not session.get('dark_mode', False)
-        print(session.get('dark_mode', False))
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
 @app.route('/register_device', methods=['POST'])
 def register_device():
@@ -97,7 +85,6 @@ def register_device():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    print("register")
     """Handles user registration"""
     if request.method == 'GET':
         return render_template('register.html', message="",dark_mode=session.get('dark_mode', False))
@@ -124,7 +111,6 @@ def register():
 def home():
     if 'user_id' not in session:
         return redirect('/')
-    print(session.get('dark_mode', False))
     account = user_manager.get_account(mysql, session['user_id'])
     username = account['email'].split('@')[0]
     return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False))

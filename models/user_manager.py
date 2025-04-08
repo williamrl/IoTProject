@@ -13,7 +13,7 @@ def login(mysql, email, password):
     
     return None
 
-def create_account(mysql, email, password):
+def create_account(mysql, email, password, nickname='Temp_Nickname'):
     # Hash the password before storing it
     hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
@@ -23,7 +23,7 @@ def create_account(mysql, email, password):
 
     if account == None:
         # Store the hashed password, NOT plaintext
-        cursor.execute('INSERT INTO accounts (email, password) VALUES (%s, %s)', (email, hashed_password))
+        cursor.execute('INSERT INTO accounts (email, password, nickname) VALUES (%s, %s, %s)', (email, hashed_password, nickname))
         mysql.connection.commit()
 
     return account == None
