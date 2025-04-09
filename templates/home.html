@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>Settings</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fontawesome-all.min.css') }}">
     <style>
@@ -21,10 +22,10 @@
             color: white;
         }
         .toggle-btn{
-           
+            
             align-items: center;
             justify-content: center;
-            padding: 10px 20px;
+            
             border: 2px solid #3b2498;
             border-radius: 20px;
             cursor: pointer;
@@ -36,6 +37,33 @@
             margin-left: 40%;
         }.toggle-btn.active {
             background-color: #8ee68c;
+        }.remove-button {
+            width:10%;
+            height:10%;
+            align-items: right;
+            justify-content: right;
+           
+            z-index: 10; /* Ensures it overlaps other elements */
+            padding: 0px 0px;
+            margin-left: 0%;
+            background-color: #ff009500;
+            color: rgb(0, 0, 0);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }.settings-button {
+            width:10%;
+            height:10%;
+            align-items: right;
+            justify-content: right;
+            margin-left: 78%;
+            z-index: 10; /* Ensures it overlaps other elements */
+            padding: 0px 0px;
+            background-color: #ff009500;
+            color: rgb(0, 0, 0);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -47,8 +75,10 @@
                 <div class="col-sm-12 col-md-12" style="height: 100%;padding-right: 0px;padding-left: 0px;margin-top: 20px;">
                     <div style="height: 100%;width: 100%;">
                         <div style="background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(127,107,255);padding: 7px;border-radius: 20px;padding-left: 20px;margin-left: 0px;margin-bottom: 0px;margin-top: 0px;margin-right: 0px;height: 100%;border-width: 5px;border-color: rgb(59,36,152);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left-width: 5px;border-left-style: outset;">
+                            <button class="remove-button" data-id="{{loop.index0}}"><i class="fas fa-trash-alt" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
+                            <button class="settings-button" data-id="{{loop.index0}}"><i class="fas fa-cog" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
                             <div style="width: 100%;height: 100%;"><strong style="display: flex;justify-content: center;align-items: center;font-size: 30px;width: 100%;height: 10%;max-height: 10%;">{{item.name}}</strong>
-                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" onclick="toggleColor(this)" type="button">{{loop.index0}}</button>
+                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" data-id="{{loop.index0}}" onclick="toggleColor(this)" type="button"></button>
                             </div>
                         </div>
                     </div>
@@ -80,7 +110,7 @@
                     <div style="height: 100%;"><button class="btn btn-primary" type="submit" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 50px;font-weight: bold;border-radius: 0px;line-height: 20px;border-color: rgb(0,0,0);">Alerts</button></div>
             </div>
             <div class="col-md-4" style="padding-right: 0px;padding-left: 0px;height: 100%;">
-                <div style="min-width: 100%;min-height: 0;height: 100%;"><button class="btn btn-primary" type="submit" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 120px;font-weight: bold;border-radius: 0px;text-align: center;line-height: 20px;border-color: rgb(0,0,0);">+</button></div>
+                <div style="min-width: 100%;min-height: 0;height: 100%;"><button class="btn btn-primary" onclick="addDevice()" type="button" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 120px;font-weight: bold;border-radius: 0px;text-align: center;line-height: 20px;border-color: rgb(0,0,0);">+</button></div>
             </div>
             
             <div class="col-md-4" style="padding-right: 0px;padding-left: 0px;height: 100%;">
@@ -92,11 +122,53 @@
         </div>
         
     </div>
+
     <script>
         
     const buttons = document.querySelectorAll('.toggle-btn');
     var items = "{% for item in items %}" + "{{item.active}}\n" + "{% endfor %}";
     items = items.split("\n")
+
+    $(document).ready(function(){
+            $(".toggle-btn").click(function(){
+                var lightId = $(this).data("id");
+                $.ajax({
+                    url: "/button_pressed",
+                    method: "POST",
+                    data: { id: lightId },
+                    success: function(response) {
+                        
+                    }
+                });
+            });
+        });
+    $(document).ready(function(){
+        $(".remove-button").click(function(){
+            var lightId = $(this).data("id");
+            $.ajax({
+                url: "/remove_button",
+                method: "POST",
+                data: { id: lightId},
+                success: function(response) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+    $(document).ready(function(){
+        $(".settings-button").click(function(){
+            var lightId = $(this).data("id");
+            var userInput = prompt("Please enter the NEW Device name:");
+            $.ajax({
+                url: "/rename_button",
+                method: "POST",
+                data: { id: lightId,name:userInput },
+                success: function(response) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
     for (let i = 0; i < items.length; i++) {
         button = buttons[i]
         item = items[i]
@@ -105,6 +177,22 @@
             button.classList.toggle('active');
         }
     }
+    function addDevice() {
+            var userInput = prompt("Please enter the Device name:");
+            if (userInput) {
+                $.ajax({
+                url: "/add_button",
+                method: "POST",
+                data: { id: userInput },
+                success: function(response) {
+                    window.location.reload();
+                }
+            });
+            } else {
+
+            }
+        }
+    
     function toggleColor(button) {
         button.classList.toggle('active');
         }
@@ -118,6 +206,7 @@
             {
                 document.documentElement.setAttribute('data-bs-theme', 'light');
             }
+        
     </script>
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
 </body>
