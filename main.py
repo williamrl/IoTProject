@@ -113,7 +113,12 @@ def home():
         return redirect('/')
     account = user_manager.get_account(mysql, session['user_id'])
     username = account['email'].split('@')[0]
-    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False))
+    username = ""
+    items = [
+    {'name': "Name",'active': True},
+    {'name': "Name",'active': True}
+    ]
+    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = items)
 
 @app.route('/publish', methods=['POST'])
 def publish():
