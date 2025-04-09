@@ -61,7 +61,10 @@ def login_api():
  
      id = user_manager.login(mysql, email, password)
      
-     return str(id)
+     if id is not None:
+         return jsonify({"user_id": id})
+     else:
+         return jsonify({"error": "Invalid credentials"}), 401
 
 @app.route('/logout', methods=['POST'])
 def logout():
