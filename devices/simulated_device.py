@@ -46,11 +46,12 @@ def handle_message(ch, method, properties, body):
     # Load the current configuration
     config = load_config()
     # Parse the incoming message
-    message = json.loads(body)
-    msg_type = message.get("type")
+    message = json.loads(body.decode())
+    msg_type = message.get("msg_type")
 
     # Handle "get_info" message type
     if msg_type == "get_info":
+        send_response(config)
         logger.info(f"Device Info: {json.dumps(config, indent=2)}")
 
     # Handle "update" message type

@@ -143,4 +143,8 @@ def list_devices():
     return message_str
     #return render_template('settings.html', message=message_str)
 
+@app.route('/get_all_devices_info', methods=['GET', 'POST'])
+def get_all_devices_info():
+    return json.dumps(device_manager.get_all_devices_info(mysql, session['user_id']))
+
 app.run(debug=True)
