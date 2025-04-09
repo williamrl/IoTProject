@@ -152,4 +152,26 @@ def list_devices():
 def get_all_devices_info():
     return json.dumps(device_manager.get_all_devices_info(mysql, session['user_id']))
 
+@app.route("/change-settings", methods=["POST"])
+def change_settings():
+    data = request.get_json()
+    device_id = data.get("device_id")
+    settings = data.get("settings")
+
+    if not device_id or not settings:
+        return jsonify({"error": "Missing device_id or settings"}), 400
+
+    queue = f"device.{device_id}"
+    message = {
+        "type": "update",
+        "settings": settings
+    }
+
+    try:
+        publish_handler(queue, message)
+        return jsonify({"status": "Settings update sent", "device": device_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 app.run(debug=True)
