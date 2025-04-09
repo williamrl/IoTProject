@@ -18,6 +18,11 @@ app.config['MYSQL_USER'] = 'SmartHome'
 app.config['MYSQL_PASSWORD'] = 'SmartHomePassword'
 app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
 
+
+dummyDeviceList = [
+    {'name': "Device 1",'active': True},
+    {'name': "Device 2",'active': True}
+    ]
 with app.app_context():
     migrate_tables(mysql)
 
@@ -107,18 +112,41 @@ def register():
             message = "Account already exists!"
             return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
 
+@app.route('/button_pressed', methods = ['POST'])
+def button_pressed():  # Get the unique ID sent by the button
+    light_id = int(request.form.get('id'))
+    dummyDeviceList[light_id]['active'] = not dummyDeviceList[light_id]['active']
+    print(f"Button {light_id} pressed!")
+    return jsonify(message=f"Button {1} pressed successfully!")
+
+@app.route('/remove_button', methods = ['POST'])
+def remove_button():  # Get the unique ID sent by the button
+    itemid = int(request.form.get('id'))
+    dummyDeviceList.pop(itemid)
+    print(f"Button {itemid} pressed!")
+    return jsonify(message=f"Button {1} pressed successfully!")
+
+@app.route('/add_button', methods = ['POST'])
+def add_button():  # Get the unique ID sent by the button
+    itemid = (request.form.get('id'))
+    dummyDeviceList.append({'name':itemid,'active':False})
+    return jsonify(message=f"Button {1} pressed successfully!")
+
+@app.route('/rename_button', methods = ['POST'])
+def rename_button():  # Get the unique ID sent by the button
+    print("Hello!!!!")
+    itemid = int(request.form.get('id'))
+    name = (request.form.get('name'))
+    dummyDeviceList[itemid]['name'] = name
+    return jsonify(message=f"Button {1} pressed successfully!")
+
 @app.route('/home')
 def home():
     if 'user_id' not in session:
         return redirect('/')
     account = user_manager.get_account(mysql, session['user_id'])
     username = account['email'].split('@')[0]
-    username = ""
-    items = [
-    {'name': "Name",'active': True},
-    {'name': "Name",'active': True}
-    ]
-    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = items)
+    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = dummyDeviceList)
 
 @app.route('/publish', methods=['POST'])
 def publish():
@@ -151,7 +179,7 @@ def list_devices():
 @app.route('/get_all_devices_info', methods=['GET', 'POST'])
 def get_all_devices_info():
     return json.dumps(device_manager.get_all_devices_info(mysql, session['user_id']))
-
+    
 @app.route("/change-settings", methods=["POST"])
 def change_settings():
     data = request.get_json()
@@ -172,6 +200,5 @@ def change_settings():
         return jsonify({"status": "Settings update sent", "device": device_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 app.run(debug=True)
