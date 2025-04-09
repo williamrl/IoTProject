@@ -1,4 +1,5 @@
-import pika, json, os, signal, sys, logging, requests
+import pika, json, os, signal, sys, logging, requests, threading
+from light_gui import *
 
 # Path to the configuration file, defaults to "light001_config.json" if not set in environment variables
 CONFIG_PATH = os.getenv("CONFIG_PATH", "light001_config.json")
@@ -100,6 +101,13 @@ channel.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
 
 while not login(): continue
 
+def start_listening():
+    logger.info(f"[{QUEUE_NAME}] Listening for messages...")
+    channel.start_consuming()
+
+listening_thread = threading.Thread(target=start_listening, daemon=True)
+listening_thread.start()
+
+start_gui()
+
 # Log that the device is ready and start consuming messages
-logger.info(f"[{QUEUE_NAME}] Listening for messages...")
-channel.start_consuming()
