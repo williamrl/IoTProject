@@ -1,6 +1,7 @@
 import pika, json, os, signal, sys, logging, requests, threading
 from light_gui import *
 
+SESSION_FILE = "user.session.json"
 # Path to the configuration file, defaults to "light001_config.json" if not set in environment variables
 CONFIG_PATH = os.getenv("CONFIG_PATH", "light001_config.json")
 # Name of the RabbitMQ queue, defaults to "device.light001" if not set in environment variables
@@ -19,20 +20,6 @@ def load_config():
         logger.error(f"Error loading config: {e}")
         # Return a default configuration if loading fails
         return {"device_id": "unknown", "settings": {}}
-    
-def register_device(account_id):
-    requests.post('http://127.0.0.1:5000/register_device', {'user_id':account_id, 'device_id':QUEUE_NAME})
-    
-def login():
-    print(f"To use your device, please login to your account")
-    email = input("Email: ")
-    password = input("Password: ")
-    response = requests.post('http://127.0.0.1:5000/login_api', {'email':email, 'password':password})
-    if response:
-        register_device(response)
-        return True
-    print("Login failed. Please try again")
-    return False
 
 # Function to save the device configuration to a JSON file
 def save_config(config):
@@ -41,6 +28,39 @@ def save_config(config):
             json.dump(config, f, indent=2)
     except Exception as e:
         logger.error(f"Error saving config: {e}")
+
+def is_logged_in():
+    return os.path.exists(SESSION_FILE)
+
+def get_stored_user_id():
+    if is_logged_in():
+        with open(SESSION_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get("user_id")
+    return None
+
+def save_user_session(user_id):
+    with open(SESSION_FILE, 'w') as f:
+        json.dump({"user_id": user_id}, f)
+
+def register_device(account_id):
+    requests.post('http://127.0.0.1:5000/register_device', {'user_id':account_id, 'device_id':QUEUE_NAME})
+    
+def login():
+    print("To use your device, please log in to your account.")
+    email = input("Email: ")
+    password = input("Password: ")
+    response = requests.post('http://127.0.0.1:5000/login_api', {'email': email, 'password': password})
+
+    if response.status_code == 200:
+        data = response.json()
+        user_id = data.get("user_id")
+        if user_id:
+            register_device(user_id)
+            save_user_session(user_id)
+            return True
+    print("Login failed. Please try again.")
+    return False
 
 # Callback function to handle incoming messages from the RabbitMQ queue
 def handle_message(ch, method, properties, body):
@@ -99,15 +119,21 @@ channel.basic_qos(prefetch_count=1)
 # Set up the consumer with the message handling callback
 channel.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
 
-while not login(): continue
-
 def start_listening():
     logger.info(f"[{QUEUE_NAME}] Listening for messages...")
     channel.start_consuming()
 
+if is_logged_in():
+    user_id = get_stored_user_id()
+    register_device(user_id)
+else:
+    while not login():
+        continue
+
 listening_thread = threading.Thread(target=start_listening, daemon=True)
 listening_thread.start()
 
-start_gui()
+gui_thread = threading.Thread(target=start_gui)
+gui_thread.start()
 
 # Log that the device is ready and start consuming messages
