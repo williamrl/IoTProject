@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, flash
+from flask import Flask, render_template, request, redirect, session, flash, url_for
 import re
 from models import user_manager
 from models import device_manager
@@ -7,6 +7,8 @@ from models.user import User  # Import User class
 from flask_mysqldb import MySQL
 from flask import jsonify
 from models.mqtt import *
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 mysql = MySQL(app)
@@ -17,6 +19,15 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'SmartHome'
 app.config['MYSQL_PASSWORD'] = 'SmartHomePassword'
 app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'IoTSmartHomePSU@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wtma fcze dtiu gbki'
+app.config['MAIL_DEFAULT_SENDER'] = 'IoTSmartHomePSU@gmail.com'
+
+mail = Mail(app)
+serializer = URLSafeTimedSerializer(app.config['MAIL_PASSWORD'])
 
 
 dummyDeviceList = [
@@ -42,11 +53,18 @@ def login():
     email = request.form['email']
     password = request.form['password']
 
+    if not is_valid_email(email):
+        message = "Email is invalid!"
+        return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
+
+    # Check if account exists and is confirmed
+    if not user_manager.is_confirmed(mysql, email):
+        message = "Please confirm your email before logging in."
+        return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
+
+    # Continue login if confirmed
     id = user_manager.login(mysql, email, password)
-    if(not is_valid_email(email)):
-            message = "Email is invalid!"
-            return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
-    elif id != None:
+    if id is not None:
         session['user_id'] = id
         return redirect('/home')
     else:
@@ -71,6 +89,7 @@ def logout():
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
+    
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     if request.method == 'GET':
@@ -78,11 +97,13 @@ def settings():
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
+    
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
     if request.method == 'POST':
         session['dark_mode'] = not session.get('dark_mode', False)
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
+    
 @app.route('/register_device', methods=['POST'])
 def register_device():
     device_id = request.form['device_id']
@@ -93,27 +114,44 @@ def register_device():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Handles user registration"""
     if request.method == 'GET':
-        return render_template('register.html', message="",dark_mode=session.get('dark_mode', False))
+        return render_template('register.html', message="", dark_mode=session.get('dark_mode', False))
     elif request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         confirm = request.form['confirmpassword']
-        if(not is_valid_email(email)):
-            message = "Email is invalid!"
-            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
-        elif(password != confirm):
-            message = "Passwords do not match!"
-            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
-        elif(len(password) <= 5):
-            message = "Password must be 6 characters or longer!"
-            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
-        elif user_manager.create_account(mysql, email, password):
-            return redirect('/')
+
+        if not is_valid_email(email):
+            return render_template('register.html', message="Email is invalid!", dark_mode=session.get('dark_mode', False))
+        elif password != confirm:
+            return render_template('register.html', message="Passwords do not match!", dark_mode=session.get('dark_mode', False))
+        elif len(password) <= 5:
+            return render_template('register.html', message="Password must be 6 characters or longer!", dark_mode=session.get('dark_mode', False))
+
+        # Attempt to create user but with is_confirmed = False
+        if user_manager.create_account(mysql, email, password, is_confirmed=False):
+            # Generate token
+            token = serializer.dumps(email, salt='email-confirm')
+            confirm_url = url_for('confirm_email', token=token, _external=True)
+
+            # Send confirmation email
+            msg = Message('Confirm your SmartHome Account', recipients=[email])
+            msg.body = f'Thank you for registering!\n\nClick this link to activate your account:\n{confirm_url}'
+            mail.send(msg)
+
+            return render_template('message.html', message="Account created! Please check your email to confirm your account.")
         else:
-            message = "Account already exists!"
-            return render_template('register.html', message=message, dark_mode=session.get('dark_mode', False))
+            return render_template('register.html', message="Account already exists!", dark_mode=session.get('dark_mode', False))
+        
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = serializer.loads(token, salt='email-confirm', max_age=3600)
+    except:
+        return render_template('message.html', message="Confirmation link is invalid or expired.")
+
+    user_manager.confirm_account(mysql, email)  # ➕ Set `is_confirmed=True` in DB
+    return render_template('message.html', message="Your account has been confirmed! You can now log in.")
 
 @app.route('/button_pressed', methods = ['POST'])
 def button_pressed():  # Get the unique ID sent by the button

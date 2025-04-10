@@ -6,6 +6,7 @@ accounts_sql = """CREATE TABLE accounts(
                 email VARCHAR(255) NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 nickname VARCHAR(255) NOT NULL,
+                is_confirmed BOOLEAN DEFAULT FALSE,
                 PRIMARY KEY(id))"""
 
 connections_sql = """CREATE TABLE connections(
