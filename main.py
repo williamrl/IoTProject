@@ -139,7 +139,18 @@ def register():
 
             return render_template('message.html', message="Account created! Please check your email to confirm your account.")
         else:
-            return render_template('register.html', message="Account already exists!", dark_mode=session.get('dark_mode', False))
+            if not user_manager.is_confirmed(mysql, email):
+                message = "This account exists but is unverified! Please verify through your email."
+                token = serializer.dumps(email, salt='email-confirm')
+                confirm_url = url_for('confirm_email', token=token, _external=True)
+
+                # Send confirmation email
+                msg = Message('Confirm your SmartHome Account', recipients=[email])
+                msg.body = f'Thank you for registering!\n\nClick this link to activate your account:\n{confirm_url}'
+                mail.send(msg)
+                return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
+            else:
+                return render_template('register.html', message="Account already exists!", dark_mode=session.get('dark_mode', False))
         
 @app.route('/confirm/<token>')
 def confirm_email(token):
