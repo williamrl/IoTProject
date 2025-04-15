@@ -153,13 +153,6 @@ def confirm_email(token):
 
 @app.route('/button_pressed', methods = ['POST'])
 def button_pressed():  # Get the unique ID sent by the button
-    light_id = int(request.form.get('id'))
-    dummyDeviceList[light_id]['active'] = not dummyDeviceList[light_id]['active']
-    print(f"Button {light_id} pressed!")
-    return jsonify(message=f"Button {1} pressed successfully!")
-
-@app.route('/button_pressed', methods = ['POST'])
-def button_pressed():  # Get the unique ID sent by the button
     id = session['user_id']
     light_id = int(request.form.get('id'))
     dummyDeviceList[id][light_id]['active'] = not dummyDeviceList[id][light_id]['active']
