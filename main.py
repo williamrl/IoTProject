@@ -30,10 +30,8 @@ mail = Mail(app)
 serializer = URLSafeTimedSerializer(app.config['MAIL_PASSWORD'])
 
 
-dummyDeviceList = [
-    {'name': "Device 1",'active': True},
-    {'name': "Device 2",'active': True}
-    ]
+dummyDeviceList = {}
+addedDevices = {}
 with app.app_context():
     migrate_tables(mysql)
 
@@ -160,34 +158,56 @@ def button_pressed():  # Get the unique ID sent by the button
     print(f"Button {light_id} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
 
+@app.route('/button_pressed', methods = ['POST'])
+def button_pressed():  # Get the unique ID sent by the button
+    id = session['user_id']
+    light_id = int(request.form.get('id'))
+    dummyDeviceList[id][light_id]['active'] = not dummyDeviceList[id][light_id]['active']
+    print(f"Button {light_id} pressed!")
+    return jsonify(message=f"Button {1} pressed successfully!")
+
 @app.route('/remove_button', methods = ['POST'])
 def remove_button():  # Get the unique ID sent by the button
+    id = session['user_id']
     itemid = int(request.form.get('id'))
-    dummyDeviceList.pop(itemid)
+    dummyDeviceList[id].pop(itemid)
     print(f"Button {itemid} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/add_button', methods = ['POST'])
 def add_button():  # Get the unique ID sent by the button
+    id = session['user_id']
     itemid = (request.form.get('id'))
-    dummyDeviceList.append({'name':itemid,'active':False})
+    dummyDeviceList[id].append({'name':itemid,'active':False})
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/rename_button', methods = ['POST'])
 def rename_button():  # Get the unique ID sent by the button
     print("Hello!!!!")
+    id = session['user_id']
     itemid = int(request.form.get('id'))
     name = (request.form.get('name'))
-    dummyDeviceList[itemid]['name'] = name
+    dummyDeviceList[id][itemid]['name'] = name
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/home')
 def home():
     if 'user_id' not in session:
         return redirect('/')
+    id = session['user_id']
+    if(not id in dummyDeviceList):
+            dummyDeviceList[id] = []
+            addedDevices[id] = []
     account = user_manager.get_account(mysql, session['user_id'])
     username = account['email'].split('@')[0]
-    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = dummyDeviceList)
+    device_ids = device_manager.get_device_ids(mysql, session['user_id'])
+    realDeviceList = []
+    for device in device_ids:
+        if(device not in addedDevices[id]):
+            realDeviceList.append({'name':device,'active': True})
+            addedDevices[id].append(device)
+    dummyDeviceList[id].extend(realDeviceList)
+    return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = dummyDeviceList[id])
 
 @app.route('/publish', methods=['POST'])
 def publish():
