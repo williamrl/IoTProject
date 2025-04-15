@@ -1,0 +1,8 @@
+{
+    "device_id": "camera001",
+    "settings": {
+        "recording": false,
+        "resolution": "1080p",
+        "motion_detection": true
+    }
+}
