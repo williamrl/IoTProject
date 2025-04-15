@@ -22,51 +22,63 @@ def save_light_config(config):
     with open(CONFIG_PATH, 'w') as f:
         json.dump(config, f, indent=2)
 
-class App(tk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.pack()
+def rgb_to_color(rgb):
+    return '#%02x%02x%02x' % rgb
 
-        # Load light001 configuration
-        self.light_config = load_light_config()
+def update_settings(value):
+    # Update brightness in the configuration
+    global oval_id, rect_id
+    brightness = brightness_slider.get()
+    light_config['settings']['brightness'] = brightness
+    save_light_config(light_config)
 
-         # Display the logged-in user
-        user_id = get_logged_in_user()
-        self.user_label = tk.Label(self, text=f"User: {user_id}", font=("Arial", 10, "italic"))
-        self.user_label.pack(pady=10)
+    # Update the displayed brightness
+    light_canvas.itemconfig(oval_id, fill=rgb_to_color((int(brightness/100 * 160)+95,int(brightness/100 * 160)+95,0)))
+    light_canvas.itemconfig(rect_id, fill="silver")
+    brightness_label.config(text=f"Brightness: {light_config['settings']['brightness']}")
+    print(f"Updated light001 settings: {light_config['settings']}")
 
-        # Display light001 settings
-        self.light_label = tk.Label(self, text=f"Light ID: {self.light_config['device_id']}", font=("Arial", 12, "bold"))
-        self.light_label.pack(pady=5)
+# Load light001 configuration
+light_config = load_light_config()
 
-        self.brightness_label = tk.Label(self, text=f"Brightness: {self.light_config['settings'].get('brightness', 'N/A')}")
-        self.brightness_label.pack()
+root = tk.Tk()
+root.geometry("500x500")
+root.title("Simulated Light Device")
+root.resizable(False, False)
 
-        self.color_label = tk.Label(self, text=f"Color: {self.light_config['settings'].get('color', 'N/A')}")
-        self.color_label.pack()
+main_frame = tk.Frame(root)
+main_frame.pack()
 
-        self.status_label = tk.Label(self, text=f"Status: {self.light_config['settings'].get('status', 'N/A')}")
-        self.status_label.pack()
+light_canvas = tk.Canvas(main_frame, width=300, height=500)
 
-        # Add controls to update brightness
-        self.brightness_slider = tk.Scale(self, from_=0, to=100, orient="horizontal", label="Brightness")
-        self.brightness_slider.set(self.light_config['settings'].get('brightness', 0))
-        self.brightness_slider.pack()
+oval_id = light_canvas.create_oval(50, 100, 250, 320, fill=rgb_to_color((95,95,0)))
+rect_id = light_canvas.create_rectangle(100, 300, 200, 500, fill="silver")
+light_canvas.pack(side=tk.LEFT)
 
-        self.update_button = tk.Button(self, text="Update Settings", command=self.update_settings)
-        self.update_button.pack(pady=10)
+slider_frame = tk.Frame(main_frame)
 
-    def update_settings(self):
-        # Update brightness in the configuration
-        self.light_config['settings']['brightness'] = self.brightness_slider.get()
-        save_light_config(self.light_config)
+# Add controls to update brightness
+brightness_slider = tk.Scale(slider_frame, from_=100, to=0, orient="vertical", length=300, showvalue=0, command=update_settings)
+brightness_slider.set(light_config['settings'].get('brightness', 0))
+brightness_slider.pack(side=tk.TOP, padx=80)
 
-        # Update the displayed brightness
-        self.brightness_label.config(text=f"Brightness: {self.light_config['settings']['brightness']}")
-        print(f"Updated light001 settings: {self.light_config['settings']}")
+# Display the logged-in user
+user_id = get_logged_in_user()
+user_label = tk.Label(slider_frame, text=f"User: {user_id}", font=("Arial", 10, "italic"))
+user_label.pack(side=tk.BOTTOM, pady=10)
+
+# Display light001 settings
+light_label = tk.Label(slider_frame, text=f"Light ID: {light_config['device_id']}", font=("Arial", 12, "bold"))
+light_label.pack(side=tk.BOTTOM, pady=5)
+
+slider_frame.pack(side=tk.RIGHT)
+
+brightness_label = tk.Label(slider_frame, text=f"Brightness: {light_config['settings'].get('brightness', 'N/A')}")
+brightness_label.pack()
+
+# update_button = tk.Button(slider_frame, text="Update Settings", command=update_settings)
+# update_button.pack(pady=10)
 
 def start_gui():
-    root = tk.Tk()
-    root.title("Light001 Control Panel")
-    myapp = App(root)
-    myapp.mainloop()
+    global root
+    root.mainloop()

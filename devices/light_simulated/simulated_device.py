@@ -133,7 +133,6 @@ else:
 listening_thread = threading.Thread(target=start_listening, daemon=True)
 listening_thread.start()
 
-gui_thread = threading.Thread(target=start_gui)
-gui_thread.start()
+start_gui()
 
 # Log that the device is ready and start consuming messages

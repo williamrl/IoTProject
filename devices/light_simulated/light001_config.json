@@ -1,8 +1,8 @@
 {
-    "device_id": "light001",
-    "settings": {
-        "brightness": 75,
-        "color": "warm_white",
-        "status": "off"
-    }
+  "device_id": "light001",
+  "settings": {
+    "brightness": 46,
+    "color": "warm_white",
+    "status": "off"
+  }
 }
