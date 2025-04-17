@@ -1,7 +1,11 @@
 import pika, json, os, signal, sys, logging, requests, threading
+from tkinter import messagebox
 from light_gui import *
+import login_form
 
-SESSION_FILE = "user.session.json"
+PATH = os.path.dirname(os.path.abspath(__file__))
+
+SESSION_FILE = os.path.join(PATH, "user.session.json")
 # Path to the configuration file, defaults to "light001_config.json" if not set in environment variables
 CONFIG_PATH = os.getenv("CONFIG_PATH", "light001_config.json")
 # Name of the RabbitMQ queue, defaults to "device.light001" if not set in environment variables
@@ -46,7 +50,7 @@ def save_user_session(user_id):
 def register_device(account_id):
     requests.post('http://127.0.0.1:5000/register_device', {'user_id':account_id, 'device_id':QUEUE_NAME})
     
-def login():
+def _login():
     print("To use your device, please log in to your account.")
     email = input("Email: ")
     password = input("Password: ")
@@ -96,8 +100,7 @@ def send_response(data):
         body=json.dumps(data)
     )
     connection.close()
-
-
+    
 # Function to handle graceful shutdown on SIGINT (Ctrl+C)
 def graceful_shutdown(signal, frame):
     logger.info("Shutting down...")
@@ -106,33 +109,38 @@ def graceful_shutdown(signal, frame):
     connection.close()
     sys.exit(0)
 
-# Register the graceful shutdown function for SIGINT
-signal.signal(signal.SIGINT, graceful_shutdown)
-
-# Establish a connection to RabbitMQ
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
-# Declare the queue to ensure it exists
-channel.queue_declare(queue=QUEUE_NAME)
-# Set QoS to process one message at a time
-channel.basic_qos(prefetch_count=1)
-# Set up the consumer with the message handling callback
-channel.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
-
 def start_listening():
     logger.info(f"[{QUEUE_NAME}] Listening for messages...")
     channel.start_consuming()
 
-if is_logged_in():
-    user_id = get_stored_user_id()
-    register_device(user_id)
-else:
-    while not login():
-        continue
+try:
+    # Register the graceful shutdown function for SIGINT
+    signal.signal(signal.SIGINT, graceful_shutdown)
 
-listening_thread = threading.Thread(target=start_listening, daemon=True)
-listening_thread.start()
+    # Establish a connection to RabbitMQ
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    # Declare the queue to ensure it exists
+    channel.queue_declare(queue=QUEUE_NAME)
+    # Set QoS to process one message at a time
+    channel.basic_qos(prefetch_count=1)
+    # Set up the consumer with the message handling callback
+    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
 
-start_gui()
+    if is_logged_in():
+        user_id = get_stored_user_id()
+        register_device(user_id)
+    else:
+        requests.get('http://localhost:5000', timeout=2)
+        login_form.login_gui(SESSION_FILE, QUEUE_NAME)
+    offline = False
+except Exception:
+    messagebox.showerror("Unable to connect to Smart Home", "Please check your connection, for now we will continue in offline mode.")
+    offline = True
 
-# Log that the device is ready and start consuming messages
+if not offline:
+    listening_thread = threading.Thread(target=start_listening, daemon=True)
+    listening_thread.start()
+
+root.deiconify()
+root.mainloop()

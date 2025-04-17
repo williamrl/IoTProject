@@ -2,7 +2,9 @@ import tkinter as tk
 import json
 import os
 
-SESSION_FILE = "user.session.json"
+PATH = os.path.dirname(os.path.abspath(__file__))
+
+SESSION_FILE = os.path.join(PATH, "user.session.json")
 CONFIG_PATH = os.getenv("CONFIG_PATH", "light001_config.json")
 
 def get_logged_in_user():
@@ -79,6 +81,4 @@ brightness_label.pack()
 # update_button = tk.Button(slider_frame, text="Update Settings", command=update_settings)
 # update_button.pack(pady=10)
 
-def start_gui():
-    global root
-    root.mainloop()
+root.withdraw()
