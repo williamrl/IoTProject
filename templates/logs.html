@@ -64,11 +64,6 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }.divider-true {
-            background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(127,107,255);
-        }
-        .divider-false {
-            background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(194, 89, 255);
         }
     </style>
 </head>
@@ -79,19 +74,11 @@
                 {% for item in items %}
                 <div class="col-sm-12 col-md-12" style="height: 100%;padding-right: 0px;padding-left: 0px;margin-top: 20px;">
                     <div style="height: 100%;width: 100%;">
-                        <div class="{% if item.dummy == 'dummy' %}divider-true{% else %}divider-false{% endif %}"
-                            style="padding: 7px; border-radius: 20px; padding-left: 20px; margin: 0; height: 100%;
-                                    border-width: 5px; border-color: rgb(59,36,152); border-top-style: solid;
-                                    border-right-style: outset; border-bottom-style: solid; border-left-style: outset;">
-                            <button class="remove-button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}"><i class="fas fa-trash-alt" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
-                            <button class="settings-button" data-id="{{loop.index0}} " data-deviceid="{{item.deviceid}}"><i class="fas fa-cog" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
+                        <div style="background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(127,107,255);padding: 7px;border-radius: 20px;padding-left: 20px;margin-left: 0px;margin-bottom: 0px;margin-top: 0px;margin-right: 0px;height: 100%;border-width: 5px;border-color: rgb(59,36,152);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left-width: 5px;border-left-style: outset;">
+                            <button class="remove-button" data-id="{{loop.index0}}"><i class="fas fa-trash-alt" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
+                            <button class="settings-button" data-id="{{loop.index0}}"><i class="fas fa-cog" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
                             <div style="width: 100%;height: 100%;"><strong style="display: flex;justify-content: center;align-items: center;font-size: 30px;width: 100%;height: 10%;max-height: 10%;">{{item.name}}</strong>
-                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}" onclick="toggleColor(this)" type="button"></button>
-                                <div style="width: 80%; margin: 10px auto; text-align: center;">
-                                    <div id="slider-value-{{loop.index0}}" style="font-weight: bold;">Value: {{item.value}}</div>
-                                    <input type="range" min="0" max="100" step="1" value="{{ item.value }}"
-                                           class="form-range slider" style="width: 80%;" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
-                                </div>
+                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" data-id="{{loop.index0}}" onclick="toggleColor(this)" type="button"></button>
                             </div>
                         </div>
                     </div>
@@ -104,7 +91,7 @@
                             <div style="height: 100%;">
                                 <figure class="text-center">
                                     <blockquote class="blockquote">
-                                        <p class="fs-2 fw-bolder mb-0">No devices registered!</p>
+                                        <p class="fs-2 fw-bolder mb-0">No logs!</p>
                                     </blockquote>
                                 </figure>
                             </div>
@@ -120,18 +107,16 @@
     <div class="container" style="padding-right: 0px;padding-left: 0px;margin-right: 0px;margin-left: 0px;max-width: 100%;width: 100%;position: fixed;margin-bottom: 0px;margin-top: 0%;height: 20%;background: #110041;">
         <div class="row" style="margin-left: 0px;margin-right: 0px;width: 100%;max-width: 100%;min-width: 100%;height: 100%;">
             <div class="col-md-4" style="padding-right: 0px;padding-left: 0px;margin-top: 0px;height: 100%;">
-                <form action="{{ url_for('logs') }}" method="get" style="height: 100%;">  
-                    <div style="height: 100%;"><button class="btn btn-primary" type="submit" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 50px;font-weight: bold;border-radius: 0px;line-height: 20px;border-color: rgb(0,0,0);">Alerts</button></div>
+                <form action="{{ url_for('home') }}" method="get" style="height: 100%;">    
+                    <div style="height: 100%;"><button class="btn btn-primary" type="submit" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 50px;font-weight: bold;border-radius: 0px;line-height: 20px;border-color: rgb(0,0,0);">Back</button></div>
                 </form>
-            </div>
+                </div>
             <div class="col-md-4" style="padding-right: 0px;padding-left: 0px;height: 100%;">
-                <div style="min-width: 100%;min-height: 0;height: 100%;"><button class="btn btn-primary" onclick="addDevice()" type="button" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 120px;font-weight: bold;border-radius: 0px;text-align: center;line-height: 20px;border-color: rgb(0,0,0);">+</button></div>
+                <div style="min-width: 100%;min-height: 0;height: 100%;"><button class="btn btn-primary" type="button" style="min-height: 100%;height: 100%;max-height: 100%;max-width: 100%;width: initial;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 120px;font-weight: bold;border-radius: 0px;text-align: center;line-height: 20px;border-color: rgb(0,0,0);"></button></div>
             </div>
             
             <div class="col-md-4" style="padding-right: 0px;padding-left: 0px;height: 100%;">
-                <form action="{{ url_for('settings') }}" method="get" style="height: 100%;">    
-                    <div style="height: 100%;"><button class="btn btn-primary" type="submit" style="height: 100%;;max-width: 100%;width: 100%;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 50px;font-weight: bold;border-radius: 0px;line-height: -50px;border-color: rgb(0,0,0);">Settings</button></div>
-                </form>
+                    <div style="height: 100%;"><button class="btn btn-primary" type="button" style="height: 100%;;max-width: 100%;width: 100%;min-width: 100%;background: rgba(39,38,129,0.8);font-size: 50px;font-weight: bold;border-radius: 0px;line-height: -50px;border-color: rgb(0,0,0);"></button></div>
             </div>
             
         </div>
@@ -143,57 +128,27 @@
     const buttons = document.querySelectorAll('.toggle-btn');
     var items = "{% for item in items %}" + "{{item.active}}\n" + "{% endfor %}";
     items = items.split("\n")
-    
-    $(document).ready(function(){
-        $(".slider").on("input", function(){
-            var sliderId = $(this).data("id");
-            var value = parseInt($(this).val());
-            var deviceID = $(this).data("deviceid");
-            $("#slider-value-" + sliderId).text("Value: " + value);
 
-            $.ajax({
-                url: "/update_slider_config",
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    id: sliderId,
-                    value: value,
-                    deviceid: deviceID
-                }),
-                success: function(response) {
-                    console.log("Config updated");
-                }
+    $(document).ready(function(){
+            $(".toggle-btn").click(function(){
+                var lightId = $(this).data("id");
+                $.ajax({
+                    url: "/button_pressed",
+                    method: "POST",
+                    data: { id: lightId },
+                    success: function(response) {
+                        
+                    }
+                });
             });
         });
-    });
-    $(document).ready(function(){
-        $(".toggle-btn").click(function(){
-            var lightId = $(this).data("id");
-            var deviceID = $(this).data("deviceid");
-            var isActive = $(this).hasClass("active");
-
-            $.ajax({
-                url: "/button_pressed",
-                method: "POST",
-                data: { 
-                    id: lightId,
-                    deviceid: deviceID,
-                    active: isActive
-                },
-                success: function(response) {
-                    // Optional: add a notification or console log
-                }
-            });
-        });
-    });
     $(document).ready(function(){
         $(".remove-button").click(function(){
             var lightId = $(this).data("id");
-            var deviceID = $(this).data("deviceid");
             $.ajax({
                 url: "/remove_button",
                 method: "POST",
-                data: { id: lightId, deviceid:deviceID},
+                data: { id: lightId},
                 success: function(response) {
                     window.location.reload();
                 }
