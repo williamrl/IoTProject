@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
 import re
+import os
 from models import user_manager
 from models import device_manager
+from devices.light_simulated import light_gui
 from models.database import *
 from models.user import User  # Import User class
 from flask_mysqldb import MySQL
@@ -87,7 +89,12 @@ def logout():
     if request.method == 'POST':
         session.pop('user_id')
         return redirect('/')
-    
+
+@app.route('/logs', methods=['GET'])
+def logs():
+    if request.method == 'GET':
+        return render_template('logs.html', message="",dark_mode=session.get('dark_mode', False), items = [])
+
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     if request.method == 'GET':
@@ -162,11 +169,35 @@ def confirm_email(token):
     user_manager.confirm_account(mysql, email)  # ➕ Set `is_confirmed=True` in DB
     return render_template('message.html', message="Your account has been confirmed! You can now log in.")
 
+
 @app.route('/button_pressed', methods = ['POST'])
 def button_pressed():  # Get the unique ID sent by the button
     id = session['user_id']
+
+    print("Updating...")
     light_id = int(request.form.get('id'))
+    deviceid = request.form.get('deviceid')
+    deviceid = deviceid.split(".")[1]
     dummyDeviceList[id][light_id]['active'] = not dummyDeviceList[id][light_id]['active']
+    print(dummyDeviceList[id][light_id]['active'])
+    isActive = dummyDeviceList[id][light_id]['active']
+    filename = f"{deviceid}_config.json"
+    config_path = filename
+    print()
+    print(config_path)
+    if not os.path.exists(config_path):
+        return jsonify(success=False, error="Config file not found"), 404
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
+    config.setdefault("settings", {})["enabled"] = isActive
+    with open(config_path, 'w') as f:
+        json.dump(config, f, indent=4)
+
+    return jsonify(success=True)
+
+
     print(f"Button {light_id} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
 
@@ -174,6 +205,12 @@ def button_pressed():  # Get the unique ID sent by the button
 def remove_button():  # Get the unique ID sent by the button
     id = session['user_id']
     itemid = int(request.form.get('id'))
+    dummy = bool(request.form.get('dummy'))
+    if(dummy != "dummy"):
+        deviceid = request.form.get('deviceid')
+        print(id)
+        print(deviceid)
+        device_manager.unregister_device(mysql,id,deviceid)
     dummyDeviceList[id].pop(itemid)
     print(f"Button {itemid} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
@@ -182,7 +219,7 @@ def remove_button():  # Get the unique ID sent by the button
 def add_button():  # Get the unique ID sent by the button
     id = session['user_id']
     itemid = (request.form.get('id'))
-    dummyDeviceList[id].append({'name':itemid,'active':False})
+    dummyDeviceList[id].append({'name':itemid,'active':False,'type':'dummy'} )
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/rename_button', methods = ['POST'])
@@ -207,10 +244,40 @@ def home():
     device_ids = device_manager.get_device_ids(mysql, session['user_id'])
     realDeviceList = []
     for device in device_ids:
+        print(device)
         if(device not in addedDevices[id]):
-            realDeviceList.append({'name':device,'active': True})
+            deviceid = device.split(".")[1]
+            filename = f"{deviceid}_config.json"
+            print(filename)
+            config_path = filename
+            print(config_path)
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                brightness = config.get("settings", {}).get("brightness", 50)
+            else:
+                brightness = 50  # Default value if file doesn't exist
+            
+
+            print(brightness)
+            realDeviceList.insert(0,{'name':device,'active': True,'type':"light",'deviceid': device,'value':brightness})
             addedDevices[id].append(device)
     dummyDeviceList[id].extend(realDeviceList)
+    for device in dummyDeviceList[id]:
+        if(device['type'] == "light"):
+            deviceid = device['deviceid'].split(".")[1]
+            filename = f"{deviceid}_config.json"
+            print(filename)
+            config_path = filename
+            print(config_path)
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                brightness = config.get("settings", {}).get("brightness", 50)
+            else:
+                brightness = 50  # Default value if file doesn't exist
+            device['value'] = brightness
+
     return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = dummyDeviceList[id])
 
 @app.route('/publish', methods=['POST'])
@@ -265,5 +332,35 @@ def change_settings():
         return jsonify({"status": "Settings update sent", "device": device_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/update_slider_config', methods=['POST'])
+def update_slider_config():
+    print("Updating...")
+    data = request.get_json()
+    deviceid = data['deviceid']
+    print(deviceid)
+    deviceid = deviceid.split(".")[1]
+    value = int(data['value'])
+
+    filename = f"{deviceid}_config.json"
+    config_path = filename
+    print(config_path)
+    if not os.path.exists(config_path):
+        return jsonify(success=False, error="Config file not found"), 404
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
+    config.setdefault("settings", {})["brightness"] = value
+    with open(config_path, 'w') as f:
+        json.dump(config, f, indent=4)
+
+    return jsonify(success=True)
+
+
+
+
 
 app.run(debug=True)
