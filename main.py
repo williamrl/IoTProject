@@ -3,6 +3,7 @@ import re
 import os
 from models import user_manager
 from models import device_manager
+from models.logger import Logger
 from devices.light_simulated import light_gui
 from models.database import *
 from models.user import User  # Import User class
@@ -13,6 +14,7 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
+logger = Logger()
 mysql = MySQL(app)
 
 app.secret_key = 'ifunre8gnfm3ir94gnur2miuf3n'
@@ -21,6 +23,7 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'SmartHome'
 app.config['MYSQL_PASSWORD'] = 'SmartHomePassword'
 app.config['MYSQL_DB'] = 'SmartHomeMonitoringSystem'
+
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -43,6 +46,7 @@ def is_valid_email(email):
 
 @app.route('/')
 def index():
+    logger.log_user_activity(user_id=session.get('user_id', 'guest'), action="visit index", status="viewed")
     if 'user_id' in session:
         return redirect('/home')
     return render_template('login.html',message = "",dark_mode=session.get('dark_mode', False))
@@ -66,9 +70,11 @@ def login():
     id = user_manager.login(mysql, email, password)
     if id is not None:
         session['user_id'] = id
+        logger.log_user_activity(user_id=id, action="login", status="success")
         return redirect('/home')
     else:
         message = "Email/Password is not correct!"
+        logger.log_user_activity(user_id=email, action="login", status="failure")
         return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
         
 
@@ -80,33 +86,43 @@ def login_api():
      id = user_manager.login(mysql, email, password)
      
      if id is not None:
+         logger.log_user_activity(user_id=id, action="API login", status="success")
          return jsonify({"user_id": id})
      else:
+         logger.log_user_activity(user_id=email, action="API login", status="failure")
          return jsonify({"error": "Invalid credentials"}), 401
 
 @app.route('/logout', methods=['POST'])
 def logout():
     if request.method == 'POST':
+        user_id = session.get('user_id', 'unknown')
+        logger.log_user_activity(user_id=user_id, action="logout", status="success")
         session.pop('user_id')
         return redirect('/')
 
 @app.route('/logs', methods=['GET'])
 def logs():
     if request.method == 'GET':
+        user_id = session.get('user_id', 'guest')
+        logger.log_user_activity(user_id=user_id, action="view logs", status="success")
         return render_template('logs.html', message="",dark_mode=session.get('dark_mode', False), items = [])
 
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     if request.method == 'GET':
+        logger.log_user_activity(user_id=user_id, action="view settings", status="success")
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     if request.method == 'POST':
         session.pop('user_id')
+        logger.log_user_activity(user_id=user_id, action="logout via settings", status="success")
         return redirect('/')
     
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
     if request.method == 'POST':
+        user_id = session.get('user_id', 'unknown')
         session['dark_mode'] = not session.get('dark_mode', False)
+        logger.log_user_activity(user_id=user_id, action="toggle dark mode", status="success")
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     
 @app.route('/register_device', methods=['POST'])
@@ -115,6 +131,7 @@ def register_device():
     user_id = request.form['user_id']
 
     device_manager.register_device(mysql, user_id, device_id)
+    logger.log_device_activity(device_name=device_id, event="Device registered", user_id=user_id)
     return 'added'
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -143,6 +160,7 @@ def register():
             msg = Message('Confirm your SmartHome Account', recipients=[email])
             msg.body = f'Thank you for registering!\n\nClick this link to activate your account:\n{confirm_url}'
             mail.send(msg)
+            logger.log_user_activity(user_id=email, action="register", status="unconfirmed")
 
             return render_template('message.html', message="Account created! Please check your email to confirm your account.")
         else:
@@ -150,6 +168,7 @@ def register():
                 message = "This account exists but is unverified! Please verify through your email."
                 token = serializer.dumps(email, salt='email-confirm')
                 confirm_url = url_for('confirm_email', token=token, _external=True)
+                logger.log_user_activity(user_id=email, action="resent confirmation", status="pending")
 
                 # Send confirmation email
                 msg = Message('Confirm your SmartHome Account', recipients=[email])
@@ -167,6 +186,7 @@ def confirm_email(token):
         return render_template('message.html', message="Confirmation link is invalid or expired.")
 
     user_manager.confirm_account(mysql, email)  # ➕ Set `is_confirmed=True` in DB
+    logger.log_user_activity(user_id=email, action="email confirmed", status="success")
     return render_template('message.html', message="Your account has been confirmed! You can now log in.")
 
 
@@ -193,12 +213,12 @@ def button_pressed():  # Get the unique ID sent by the button
         with open(config_path, 'r') as f:
             config = json.load(f)
 
+        logger.log_device_activity(device_name=deviceid, event="Toggled device state", user_id=id)
         config.setdefault("settings", {})["enabled"] = isActive
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
 
     return jsonify(success=True)
-
 
     print(f"Button {light_id} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
@@ -213,6 +233,7 @@ def remove_button():  # Get the unique ID sent by the button
         print(id)
         print(deviceid)
         device_manager.unregister_device(mysql,id,deviceid)
+        logger.log_device_activity(device_name=deviceid, event="Device unregistered", user_id=id)
     dummyDeviceList[id].pop(itemid)
     print(f"Button {itemid} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
@@ -231,13 +252,16 @@ def rename_button():  # Get the unique ID sent by the button
     itemid = int(request.form.get('id'))
     name = (request.form.get('name'))
     dummyDeviceList[id][itemid]['name'] = name
+    logger.log_device_activity(device_name=dummyDeviceList[id][itemid]['name'], event=f"Renamed to {name}", user_id=id)
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/home')
 def home():
+
     if 'user_id' not in session:
         return redirect('/')
     id = session['user_id']
+    logger.log_user_activity(user_id=id, action="viewed home", status="success")
     if(not id in dummyDeviceList):
             dummyDeviceList[id] = []
             addedDevices[id] = []
@@ -288,6 +312,12 @@ def publish():
     topic = data.get("topic")
     message = data.get("message")
     publish_handler(topic, message)
+    logger.log_device_activity(
+        device_name=topic,
+        event=f"MQTT message published: {message}",
+        user_id=session.get('user_id', 'unknown')
+    )
+
     return jsonify({"status": "Message published"}), 200
 
 @app.route('/get_device_ids', methods=['POST'])
@@ -331,6 +361,11 @@ def change_settings():
 
     try:
         publish_handler(queue, message)
+        logger.log_device_activity(
+            device_name=device_id,
+            event=f"Settings update sent: {settings}",
+            user_id=session.get('user_id', 'unknown')
+        )
         return jsonify({"status": "Settings update sent", "device": device_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -345,6 +380,12 @@ def update_slider_config():
     print(deviceid)
     deviceid = deviceid.split(".")[1]
     value = int(data['value'])
+
+    logger.log_device_activity(
+        device_name=deviceid,
+        event=f"Brightness set to {value}",
+        user_id=session['user_id']
+    )
 
     filename = f"{deviceid}_config.json"
     config_path = filename
