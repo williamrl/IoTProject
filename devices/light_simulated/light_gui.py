@@ -27,19 +27,45 @@ def save_light_config(config):
 def rgb_to_color(rgb):
     return '#%02x%02x%02x' % rgb
 
-def update_settings(value):
-    # Update brightness in the configuration
+def update_settings(value=None):
     global oval_id, rect_id
     brightness = brightness_slider.get()
+    enabled = bool(light_config['settings'].get('enabled', True))
+    print(brightness)
+    if enabled == False:
+        brightness = 0
     light_config['settings']['brightness'] = brightness
     save_light_config(light_config)
 
-    # Update the displayed brightness
     light_canvas.itemconfig(oval_id, fill=rgb_to_color((int(brightness/100 * 160)+95,int(brightness/100 * 160)+95,0)))
     light_canvas.itemconfig(rect_id, fill="silver")
     brightness_label.config(text=f"Brightness: {light_config['settings']['brightness']}")
+    print(CONFIG_PATH)
     print(f"Updated light001 settings: {light_config['settings']}")
 
+def sync_settings_from_file():
+    print("Updating...")
+    global light_config, oval_id, rect_id
+    new_config = load_light_config()
+    brightness = new_config['settings'].get('brightness', 0)
+    enabled = bool(new_config['settings'].get('enabled', True))
+    print(brightness)
+    # Only update if brightness actually changed
+    if enabled == False:
+        brightness = 0
+    light_config = new_config
+
+    light_canvas.itemconfig(
+        oval_id,
+        fill=rgb_to_color((int(brightness/100 * 160)+95, int(brightness/100 * 160)+95, 0))
+    )
+    brightness_label.config(text=f"Brightness: {brightness}")
+        
+        
+def loop_update_settings():
+    print(CONFIG_PATH)
+    sync_settings_from_file()
+    root.after(1000, loop_update_settings)
 # Load light001 configuration
 light_config = load_light_config()
 
@@ -78,7 +104,5 @@ slider_frame.pack(side=tk.RIGHT)
 brightness_label = tk.Label(slider_frame, text=f"Brightness: {light_config['settings'].get('brightness', 'N/A')}")
 brightness_label.pack()
 
-# update_button = tk.Button(slider_frame, text="Update Settings", command=update_settings)
-# update_button.pack(pady=10)
-
+loop_update_settings() 
 root.withdraw()
