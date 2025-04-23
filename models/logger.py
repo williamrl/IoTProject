@@ -1,40 +1,33 @@
-import MySQLdb
+import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
-from flask_mysqldb import MySQL
+import os
 
 class Logger:
-    def __init__(self, mysql):
-        """Initialize with a MySQL connection instance from Flask."""
-        self.mysql = mysql
+    def __init__(self, log_file='logs/system_log.log'):
+        
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        self.logger = logging.getLogger('SmartHomeLogger')
+        self.logger.setLevel(logging.INFO)
+
+        # Avoid adding multiple handlers if logger is reused
+        if not self.logger.handlers:
+            handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3)
+            formatter = logging.Formatter(
+                '[%(asctime)s] %(levelname)s | %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
 
     def log_user_activity(self, user_id, action, status):
-        """
-        Logs user activity such as login/logout attempts.
-        :param user_id: The user's ID.
-        :param action: The action performed (e.g., "login", "logout").
-        :param status: The result ("success" or "failure").
-        """
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        cursor = self.mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute(
-            "INSERT INTO user_logs (user_id, action, status, timestamp) VALUES (%s, %s, %s, %s)",
-            (user_id, action, status, timestamp)
-        )
-        self.mysql.connection.commit()
-        cursor.close()
+       
+        message = f"USER | ID: {user_id} | ACTION: {action} | STATUS: {status}"
+        self.logger.info(message)
 
     def log_device_activity(self, device_name, event, user_id=None):
-        """
-        Logs device activity such as motion detection or security alerts.
-        :param device_name: The name of the smart home device.
-        :param event: The event description (e.g., "Motion detected in living room").
-        :param user_id: (Optional) The user associated with the event.
-        """
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        cursor = self.mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute(
-            "INSERT INTO device_logs (device_name, event, user_id, timestamp) VALUES (%s, %s, %s, %s)",
-            (device_name, event, user_id, timestamp)
-        )
-        self.mysql.connection.commit()
-        cursor.close()
+       
+        message = f"DEVICE | Name: {device_name} | Event: {event}"
+        if user_id:
+            message += f" | User ID: {user_id}"
+        self.logger.info(message)
