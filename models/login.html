@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="{{ 'dark' if dark_mode else 'light' }}" style="width: 100%;height: 100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fontawesome-all.min.css') }}">
+    <style>
+        body {
+            transition: background 0.3s, color 0.3s;
+            width: 100%;
+            height:100%;
+            background: linear-gradient(#936dff 0%, #bacdff), #d1d5ff;
+            color: black;
+        }
+        .dark-mode {
+            width: 100%;
+            height:100%;
+            background: linear-gradient(#3d1c4d 0%, #16213e), #0f3460;
+            color: white;
+        }
+        .toggle-button {
+           
+            border: 1px solid black;
+            color: white;
+        }
+    </style>
+</head>
+<body style="width: 100%;height: 100%;">
+    <div class="container" style="height: 100%;width: 60%;max-height: 100%;max-width: 40%;">
+        <div class="row" style="height: 100%;">
+            <form action="{{ url_for('login') }}" method="post">
+            <div class="col-sm-12 col-md-12 col-xxl-12" style="height: 100%;max-height: 100%;">
+                <div style="max-height: 100%;height: 100%;">
+                    <div style="height: 20%;">
+                        <p class="fs-1" style="text-align: center;font-weight: bold;font-size: 50px;padding-top: 0px;height: 100%;margin-bottom: 0px;width: 100%;">Welcome! <br>Please Login or Register.</p>
+                    </div>
+                    <div style="height: 10%;">
+                        <p class="fs-4" style="text-align: center;font-weight: bold;font-size: 50px;padding-top: 0px;height: 100%;margin-bottom: 0px;width: 100%;color: rgb(180,28,28);">{{ message }}</p>
+                    </div>
+                    <div style="background: rgba(166, 165, 255);padding: 7px;border-radius: 20px;padding-left: 20px;margin-left: 30px;border-width: 5px;border-color: rgb(147,164,255);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left-width: 5px;border-left-style: outset;margin-bottom: 30px;margin-top: 50px;margin-right: 30px;max-height: 54px;"><i class="fas fa-envelope" style="background: rgba(211,221,255,0);padding-left: 7px;border-width: 0px;border-color: rgb(79,167,255);color: rgb(59, 59, 59);"></i><input type="text" name="email" style="padding-left: 0px;padding-right: 20px;margin-left: 10px;background: rgba(255,255,255,0);color: rgb(59, 59, 59);border-color: rgba(0,0,0,0);margin-top: -6px;height: 100%;width: 80%;" placeholder="Email"></div>
+                    <div style="background: rgba(166, 165, 255);padding: 7px;border-radius: 20px;padding-left: 20px;margin-left: 30px;border-width: 5px;border-color: rgb(147,164,255);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left-width: 5px;border-left-style: outset;margin-bottom: 20px;margin-right: 30px;max-height: 54px;"><i class="fas fa-lock" style="background: rgba(211,221,255,0);padding-left: 7px;border-width: 0px;border-color: rgb(79,167,255);color: rgb(59, 59, 59);"></i><input type="password" name="password" style="height: 100%;width: 80%;margin-top: -6px;margin-left: 10px;padding-right: 20px;padding-left: 0px;background: rgba(255,255,255,0);color: rgb(59, 59, 59);border-color: rgba(0,0,0,0);" placeholder="Password"></div>
+                    <div style="background: rgba(194,200,232,0);padding: 0px;border-radius: 20px;padding-left: 0px;margin-left: 30px;margin-bottom: 30px;margin-right: 30px;max-height: 54px;border-width: 5px;border-color: rgba(147,164,255,0);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left: 5px outset rgba(147,164,255,0);text-align: center;"><button class="btn btn-primary active" type="submit" style="max-width: 100%;width: 70%;background: rgb(107,104,255);border-radius: 20px;font-size: 30px;text-align: center;">Login</button>
+                    </form>
+                        <a href="/register">
+                        <div style="background: rgba(194,200,232,0);padding: 0px;border-radius: 20px;padding-left: 0px;margin-left: 50px;margin-bottom: 0px;margin-right: 30px;max-height: 54px;border-width: 5px;border-color: rgba(147,164,255,0);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left: 5px outset rgba(147,164,255,0);text-align: center;"><button class="btn btn-primary active text-center" type="button" style="width: 50%;background: rgb(107,104,255);border-radius: 20px;font-size: 20px;text-align: center;">Register</button></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        if("{{dark_mode}}" == "True")
+            {
+                document.body.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        else
+            {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+    </script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+</body>
+
+</html>
