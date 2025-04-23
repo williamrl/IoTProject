@@ -176,24 +176,26 @@ def button_pressed():  # Get the unique ID sent by the button
 
     print("Updating...")
     light_id = int(request.form.get('id'))
-    deviceid = request.form.get('deviceid')
-    deviceid = deviceid.split(".")[1]
+    itemtype = request.form.get('type')
     dummyDeviceList[id][light_id]['active'] = not dummyDeviceList[id][light_id]['active']
-    print(dummyDeviceList[id][light_id]['active'])
     isActive = dummyDeviceList[id][light_id]['active']
-    filename = f"{deviceid}_config.json"
-    config_path = filename
-    print()
-    print(config_path)
-    if not os.path.exists(config_path):
-        return jsonify(success=False, error="Config file not found"), 404
+    print(itemtype)
+    if(itemtype != "dummy"):
+        deviceid = request.form.get('deviceid')
+        deviceid = deviceid.split(".")[1]
+        filename = f"{deviceid}_config.json"
+        config_path = filename
+        print()
+        print(config_path)
+        if not os.path.exists(config_path):
+            return jsonify(success=False, error="Config file not found"), 404
 
-    with open(config_path, 'r') as f:
-        config = json.load(f)
+        with open(config_path, 'r') as f:
+            config = json.load(f)
 
-    config.setdefault("settings", {})["enabled"] = isActive
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=4)
+        config.setdefault("settings", {})["enabled"] = isActive
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=4)
 
     return jsonify(success=True)
 
