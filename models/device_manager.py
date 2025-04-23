@@ -50,7 +50,17 @@ def register_device(mysql, account_id, device_id):
 
     if connections:
         return
-
+    print("Adding Device:")
+    print(device_id)
+    print(account_id)
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(f"INSERT INTO connections (account_id, device_id) VALUES ('{account_id}', '{device_id}')")
+    mysql.connection.commit()
+
+def unregister_device(mysql, account_id, device_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    print("Removing Device:")
+    print(device_id)
+    print(account_id)
+    cursor.execute(f"DELETE FROM connections WHERE device_id = '{device_id}' AND account_id = '{account_id}'")
     mysql.connection.commit()
