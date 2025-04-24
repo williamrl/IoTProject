@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
 import re
 import os
+import datetime
 from models import user_manager
 from models import device_manager
 from models.logger import Logger
-from devices.light_simulated import light_gui
 from models.database import *
 from models.user import User  # Import User class
 from flask_mysqldb import MySQL
@@ -36,17 +36,36 @@ serializer = URLSafeTimedSerializer(app.config['MAIL_PASSWORD'])
 
 
 dummyDeviceList = {}
-addedDevices = {}
 with app.app_context():
     migrate_tables(mysql)
 
+logsDict = {}
+
+def logUserAction(user_id,action,status,priority = False):
+    now = datetime.datetime.now()
+    date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    logger.log_user_activity(user_id=user_id, action=action, status=status)
+    print(logsDict)
+    if(user_id not in logsDict):
+        logsDict[user_id] = [{'name': "User Action:",'date': date_time_str,'description': f"{action}, {status}",'priority':priority}]
+    else:
+        logsDict[user_id].append({'name': "User Action:",'date': date_time_str,'description': f"{action}, {status}",'priority':priority})
+def logDeviceAction(device_name, event, user_id=None ,priority = False):
+    now = datetime.datetime.now()
+    date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    logger.log_device_activity(device_name=device_name, event=event, user_id=user_id)
+    if(user_id != None):
+        if(user_id not in logsDict):
+            logsDict[user_id] = [{'name': "Device Action:",'date': date_time_str,'description': f"{device_name}, {event}",'priority':priority}]
+        else:
+            logsDict[user_id].append({'name': "Device Action:",'date': date_time_str,'description': f"{device_name}, {event}",'priority':priority})
 def is_valid_email(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return re.match(pattern, email) is not None
 
 @app.route('/')
 def index():
-    logger.log_user_activity(user_id=session.get('user_id', 'guest'), action="visit index", status="viewed")
+    logUserAction(user_id=session.get('user_id', 'guest'), action="visit index", status="viewed")
     if 'user_id' in session:
         return redirect('/home')
     return render_template('login.html',message = "",dark_mode=session.get('dark_mode', False))
@@ -64,17 +83,22 @@ def login():
     # Check if account exists and is confirmed
     if not user_manager.is_confirmed(mysql, email):
         message = "Please confirm your email before logging in."
+        id = user_manager.getid(mysql,email)
+        if(id != None):
+            logUserAction(user_id=email, action="login", status="failure",priority=True)
         return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
 
     # Continue login if confirmed
     id = user_manager.login(mysql, email, password)
     if id is not None:
         session['user_id'] = id
-        logger.log_user_activity(user_id=id, action="login", status="success")
+        logUserAction(user_id=id, action="login", status="success")
         return redirect('/home')
     else:
         message = "Email/Password is not correct!"
-        logger.log_user_activity(user_id=email, action="login", status="failure")
+        id = user_manager.getid(mysql,email)
+        if(id != None):
+            logUserAction(user_id=id, action="login", status="failure",priority=True)
         return render_template('login.html',message = message,dark_mode=session.get('dark_mode', False))
         
 
@@ -86,52 +110,55 @@ def login_api():
      id = user_manager.login(mysql, email, password)
      
      if id is not None:
-         logger.log_user_activity(user_id=id, action="API login", status="success")
          return jsonify({"user_id": id})
+         logUserAction(user_id=id, action="API login", status="success")
      else:
-         logger.log_user_activity(user_id=email, action="API login", status="failure")
+         logUserAction(user_id=email, action="API login", status="failure")
          return jsonify({"error": "Invalid credentials"}), 401
 
 @app.route('/logout', methods=['POST'])
 def logout():
     if request.method == 'POST':
+        
         user_id = session.get('user_id', 'unknown')
-        logger.log_user_activity(user_id=user_id, action="logout", status="success")
+        logUserAction(user_id=user_id, action="logout", status="success")
         session.pop('user_id')
         return redirect('/')
 
 @app.route('/logs', methods=['GET'])
 def logs():
     if request.method == 'GET':
-        user_id = session.get('user_id', 'guest')
-        logger.log_user_activity(user_id=user_id, action="view logs", status="success")
-        return render_template('logs.html', message="",dark_mode=session.get('dark_mode', False), items = [])
+        id = session['user_id']
+        if(not id in logsDict):
+            logsDict[id] = []
+        print(logsDict[id])
+        return render_template('logs.html', message="",dark_mode=session.get('dark_mode', False), items = logsDict[id])
 
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     if request.method == 'GET':
-        logger.log_user_activity(user_id = session['user_id'], action="view settings", status="success")
+        user_id = session.get('user_id', 'unknown')
+        logUserAction(user_id = session['user_id'], action="view settings", status="success")
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     if request.method == 'POST':
+        logUserAction(user_id = session['user_id'], action="logout via settings", status="success")
         session.pop('user_id')
-        logger.log_user_activity(user_id = session['user_id'], action="logout via settings", status="success")
         return redirect('/')
     
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
     if request.method == 'POST':
         user_id = session.get('user_id', 'unknown')
+        logUserAction(user_id=session['user_id'], action="toggle dark mode", status="success")
         session['dark_mode'] = not session.get('dark_mode', False)
-        logger.log_user_activity(user_id=user_id, action="toggle dark mode", status="success")
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     
 @app.route('/register_device', methods=['POST'])
 def register_device():
     device_id = request.form['device_id']
     user_id = request.form['user_id']
-
+    logDeviceAction(device_name=device_id, event="Device registered", user_id=user_id)
     device_manager.register_device(mysql, user_id, device_id)
-    logger.log_device_activity(device_name=device_id, event="Device registered", user_id=user_id)
     return 'added'
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -160,7 +187,7 @@ def register():
             msg = Message('Confirm your SmartHome Account', recipients=[email])
             msg.body = f'Thank you for registering!\n\nClick this link to activate your account:\n{confirm_url}'
             mail.send(msg)
-            logger.log_user_activity(user_id=email, action="register", status="unconfirmed")
+            logUserAction(user_id=email, action="register", status="unconfirmed")
 
             return render_template('message.html', message="Account created! Please check your email to confirm your account.")
         else:
@@ -168,8 +195,7 @@ def register():
                 message = "This account exists but is unverified! Please verify through your email."
                 token = serializer.dumps(email, salt='email-confirm')
                 confirm_url = url_for('confirm_email', token=token, _external=True)
-                logger.log_user_activity(user_id=email, action="resent confirmation", status="pending")
-
+                logUserAction(user_id=email, action="resent confirmation", status="pending")
                 # Send confirmation email
                 msg = Message('Confirm your SmartHome Account', recipients=[email])
                 msg.body = f'Thank you for registering!\n\nClick this link to activate your account:\n{confirm_url}'
@@ -186,14 +212,13 @@ def confirm_email(token):
         return render_template('message.html', message="Confirmation link is invalid or expired.")
 
     user_manager.confirm_account(mysql, email)  # ➕ Set `is_confirmed=True` in DB
-    logger.log_user_activity(user_id=email, action="email confirmed", status="success")
+    logUserAction(user_id=session['user_id'], action="email confirmed", status="success")
     return render_template('message.html', message="Your account has been confirmed! You can now log in.")
 
 
 @app.route('/button_pressed', methods = ['POST'])
 def button_pressed():  # Get the unique ID sent by the button
     id = session['user_id']
-
     print("Updating...")
     light_id = int(request.form.get('id'))
     itemtype = request.form.get('type')
@@ -213,12 +238,12 @@ def button_pressed():  # Get the unique ID sent by the button
         with open(config_path, 'r') as f:
             config = json.load(f)
 
-        logger.log_device_activity(device_name=deviceid, event="Toggled device state", user_id=id)
         config.setdefault("settings", {})["enabled"] = isActive
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
 
     return jsonify(success=True)
+
 
     print(f"Button {light_id} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
@@ -233,8 +258,22 @@ def remove_button():  # Get the unique ID sent by the button
         print(id)
         print(deviceid)
         device_manager.unregister_device(mysql,id,deviceid)
-        logger.log_device_activity(device_name=deviceid, event="Device unregistered", user_id=id)
+        logDeviceAction(device_name=deviceid, event="Device unregistered", user_id=id)
     dummyDeviceList[id].pop(itemid)
+    print(f"Button {itemid} pressed!")
+    return jsonify(message=f"Button {1} pressed successfully!")
+
+@app.route('/remove_log_button', methods = ['POST'])
+def remove_log_button():  # Get the unique ID sent by the button
+    id = session['user_id']
+    itemid = int(request.form.get('id'))
+    dummy = bool(request.form.get('type'))
+    if(dummy != "dummy"):
+        deviceid = request.form.get('deviceid')
+        print(id)
+        print(deviceid)
+        device_manager.unregister_device(mysql,id,deviceid)
+    logsDict[id].pop(itemid)
     print(f"Button {itemid} pressed!")
     return jsonify(message=f"Button {1} pressed successfully!")
 
@@ -242,6 +281,11 @@ def remove_button():  # Get the unique ID sent by the button
 def add_button():  # Get the unique ID sent by the button
     id = session['user_id']
     itemid = (request.form.get('id'))
+    logDeviceAction(
+        device_name=itemid,
+        event=f"Added device: {itemid}",
+        user_id=session.get('user_id', 'unknown')
+    )
     dummyDeviceList[id].append({'name':itemid,'active':False,'type':'dummy'} )
     return jsonify(message=f"Button {1} pressed successfully!")
 
@@ -252,19 +296,17 @@ def rename_button():  # Get the unique ID sent by the button
     itemid = int(request.form.get('id'))
     name = (request.form.get('name'))
     dummyDeviceList[id][itemid]['name'] = name
-    logger.log_device_activity(device_name=dummyDeviceList[id][itemid]['name'], event=f"Renamed to {name}", user_id=id)
+    logDeviceAction(device_name=dummyDeviceList[id][itemid]['name'], event=f"Renamed to {name}", user_id=id)
     return jsonify(message=f"Button {1} pressed successfully!")
 
 @app.route('/home')
 def home():
-
     if 'user_id' not in session:
         return redirect('/')
     id = session['user_id']
-    logger.log_user_activity(user_id=id, action="viewed home", status="success")
+    logUserAction(user_id=id, action="viewed home", status="success")
     if(not id in dummyDeviceList):
             dummyDeviceList[id] = []
-            addedDevices[id] = []
     account = user_manager.get_account(mysql, session['user_id'])
     try:
         username = account['email'].split('@')[0]
@@ -274,32 +316,51 @@ def home():
     device_ids = device_manager.get_device_ids(mysql, session['user_id'])
     realDeviceList = []
     for device in device_ids:
-        print(device)
-        if(device not in addedDevices[id]):
-            deviceid = device.split(".")[1]
-            filename = f"{deviceid}_config.json"
-            print(filename)
-            config_path = filename
-            print(config_path)
+        deviceid = device.split(".")[1]
+        filename = f"{deviceid}_config.json"
+        config_path = filename
+        print(config_path)
+        if(deviceid == "light001"):
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
                     config = json.load(f)
                 brightness = config.get("settings", {}).get("brightness", 50)
             else:
                 brightness = 50  # Default value if file doesn't exist
+            deviceData = {'id':device,'name':device,'active': True,'type':"light",'deviceid': device,'value':brightness}
+            if not any(d['id'] == deviceData['id'] for d in dummyDeviceList[id]):
+                logDeviceAction(
+                device_name=deviceid,
+                event=f"Added device: {device}",
+                user_id=session.get('user_id', 'unknown')
+                )
+                realDeviceList.insert(0,deviceData)
+        elif(deviceid == "thermostat001"):
+            if os.path.exists(config_path):
+                print("Exists")
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                temperature = config.get("settings", {}).get("temperature", 50)
+                mode = config.get("settings", {}).get("mode", "heat")
+            else:
+                temperature = 50  # Default value if file doesn't exist
+                mode = "heat"
             
-
-            print(brightness)
-            realDeviceList.insert(0,{'name':device,'active': True,'type':"light",'deviceid': device,'value':brightness})
-            addedDevices[id].append(device)
+            deviceData ={'id':device,'name':device,'active': True,'type':"thermostat",'deviceid': device,'value': temperature,'mode': mode}
+            if not any(d['id'] == deviceData['id'] for d in dummyDeviceList[id]):
+                logDeviceAction(
+                device_name=deviceid,
+                event=f"Added device: {device}",
+                user_id=session.get('user_id', 'unknown')
+                )
+                realDeviceList.insert(0,deviceData)
     dummyDeviceList[id].extend(realDeviceList)
     for device in dummyDeviceList[id]:
+        deviceid = device['deviceid'].split(".")[1]
+        filename = f"{deviceid}_config.json"
+        config_path = filename
+        print(device['type'])
         if(device['type'] == "light"):
-            deviceid = device['deviceid'].split(".")[1]
-            filename = f"{deviceid}_config.json"
-            print(filename)
-            config_path = filename
-            print(config_path)
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
                     config = json.load(f)
@@ -307,7 +368,18 @@ def home():
             else:
                 brightness = 50  # Default value if file doesn't exist
             device['value'] = brightness
-
+        elif(device['type'] == "thermostat"):
+            print("thermo time")
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                temperature = config.get("settings", {}).get("temperature", 50)
+                mode = config.get("settings", {}).get("mode", "heat")
+            else:
+                temperature = 50  # Default value if file doesn't exist
+                mode = "heat"
+            device['value'] = temperature
+            device['mode'] = mode
     return render_template('home.html', username=username, dark_mode=session.get('dark_mode', False),items = dummyDeviceList[id])
 
 @app.route('/publish', methods=['POST'])
@@ -315,13 +387,12 @@ def publish():
     data = request.json
     topic = data.get("topic")
     message = data.get("message")
+    logDeviceAction(
+         device_name=topic,
+         event=f"MQTT message published: {message}",
+         user_id=session.get('user_id', 'unknown')
+     )
     publish_handler(topic, message)
-    logger.log_device_activity(
-        device_name=topic,
-        event=f"MQTT message published: {message}",
-        user_id=session.get('user_id', 'unknown')
-    )
-
     return jsonify({"status": "Message published"}), 200
 
 @app.route('/get_device_ids', methods=['POST'])
@@ -365,11 +436,11 @@ def change_settings():
 
     try:
         publish_handler(queue, message)
-        logger.log_device_activity(
-            device_name=device_id,
-            event=f"Settings update sent: {settings}",
-            user_id=session.get('user_id', 'unknown')
-        )
+        logDeviceAction(
+             device_name=device_id,
+             event=f"Settings update sent: {settings}",
+             user_id=session.get('user_id', 'unknown')
+         )
         return jsonify({"status": "Settings update sent", "device": device_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -384,13 +455,6 @@ def update_slider_config():
     print(deviceid)
     deviceid = deviceid.split(".")[1]
     value = int(data['value'])
-
-    logger.log_device_activity(
-        device_name=deviceid,
-        event=f"Brightness set to {value}",
-        user_id=session['user_id']
-    )
-
     filename = f"{deviceid}_config.json"
     config_path = filename
     print(config_path)
@@ -399,8 +463,10 @@ def update_slider_config():
 
     with open(config_path, 'r') as f:
         config = json.load(f)
-
-    config.setdefault("settings", {})["brightness"] = value
+    if(deviceid == "light001"):
+        config.setdefault("settings", {})["brightness"] = value
+    elif (deviceid == "thermostat001"):
+        config.setdefault("settings", {})["temperature"] = value
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=4)
 

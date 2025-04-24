@@ -16,6 +16,22 @@ connections_sql = """CREATE TABLE connections(
                 PRIMARY KEY(id),
                 FOREIGN KEY (account_id) REFERENCES accounts(id))"""
 
+user_logs_sql = """CREATE TABLE user_logs(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                action VARCHAR(50),
+                status VARCHAR(50),
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES accounts(id))"""
+
+device_logs_sql = """CREATE TABLE device_logs(
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  device_name VARCHAR(255),
+                  event TEXT,
+                  user_id INT DEFAULT NULL,
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES accounts(id))"""
+
 def describeSQL(mysql, sql):
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("DROP TABLE IF EXISTS temp")
@@ -49,6 +65,7 @@ def migrate_table(mysql, sql, fks=[]):
         cursor.execute(sql)
 
 def migrate_tables(mysql):
-    migrate_table(mysql, accounts_sql, [connections_sql])
+    migrate_table(mysql, accounts_sql, [connections_sql, user_logs_sql, device_logs_sql])
     migrate_table(mysql, connections_sql)
-    
+    migrate_table(mysql, user_logs_sql)
+    migrate_table(mysql, device_logs_sql)

@@ -72,18 +72,53 @@
         <div class="row" style="height: 30%;" name = "rowStuff">
             {% if items %}
                 {% for item in items %}
-                <div class="col-sm-12 col-md-12" style="height: 100%;padding-right: 0px;padding-left: 0px;margin-top: 20px;">
-                    <div style="height: 100%;width: 100%;">
-                        <div style="background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(127,107,255);padding: 7px;border-radius: 20px;padding-left: 20px;margin-left: 0px;margin-bottom: 0px;margin-top: 0px;margin-right: 0px;height: 100%;border-width: 5px;border-color: rgb(59,36,152);border-top-width: 5px;border-top-style: solid;border-right-width: 5px;border-right-style: outset;border-bottom-width: 5px;border-bottom-style: solid;border-left-width: 5px;border-left-style: outset;">
-                            <button class="remove-button" data-id="{{loop.index0}}"><i class="fas fa-trash-alt" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
-                            <button class="settings-button" data-id="{{loop.index0}}"><i class="fas fa-cog" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
-                            <div style="width: 100%;height: 100%;"><strong style="display: flex;justify-content: center;align-items: center;font-size: 30px;width: 100%;height: 10%;max-height: 10%;">{{item.name}}</strong>
-                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" data-id="{{loop.index0}}" onclick="toggleColor(this)" type="button"></button>
+                {% if item.priority %}
+                <div class="col-sm-12 col-md-12" style="height: 100%; padding-right: 0px; padding-left: 0px; margin-top: 20px;">
+                    <div style="height: 100%; width: 100%;">
+                        <div style="background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(235, 40, 154);
+                                    padding: 7px; border-radius: 20px; padding-left: 20px; margin: 0px; height: 100%;
+                                    border-width: 5px; border-color: rgb(59,36,152); border-top-style: solid;
+                                    border-right-style: outset; border-bottom-style: solid; border-left-style: outset;">
+                            <button class="remove-button" data-id="{{loop.index0}}" data-type="{{item.type}}">
+                                <i class="fas fa-trash-alt" style="width: 100%; height: 100%; font-size: 37px;"></i>
+                            </button>
+                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; gap: 10px; padding-top: 10px;">
+                                <div style="font-size: 2vw; font-weight: bold; text-align: center; width: 90%; max-height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                    {{item.name}}</div>
+                                <div style="font-size: 1.2vw; color: #dddddd; text-align: center; width: 90%; max-height: 2.4em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+                                    {{item.date}}</div>
+                                <div style="font-size: 1vw; text-align: center; width: 90%; background-color: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 10px; max-height: 4em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                    {{item.description}}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+                {% endif %}
+            {% endfor %}
+            {% for item in items %}
+                {% if not item.priority %}
+                <div class="col-sm-12 col-md-12" style="height: 100%; padding-right: 0px; padding-left: 0px; margin-top: 20px;">
+                    <div style="height: 100%; width: 100%;">
+                        <div style="background: linear-gradient(rgba(255,255,255,0.21), rgba(255,255,255,0.08)), rgb(127,107,255);
+                                    padding: 7px; border-radius: 20px; padding-left: 20px; margin: 0px; height: 100%;
+                                    border-width: 5px; border-color: rgb(59,36,152); border-top-style: solid;
+                                    border-right-style: outset; border-bottom-style: solid; border-left-style: outset;">
+                            <button class="remove-button" data-id="{{loop.index0}}" data-type="{{item.type}}">
+                                <i class="fas fa-trash-alt" style="width: 100%; height: 100%; font-size: 37px;"></i>
+                            </button>
+                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; gap: 10px; padding-top: 10px;">
+                                <div style="font-size: 2vw; font-weight: bold; text-align: center; width: 90%; max-height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                    {{item.name}}</div>
+                                <div style="font-size: 1.2vw; color: #dddddd; text-align: center; width: 90%; max-height: 2.4em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+                                    {{item.date}}</div>
+                                <div style="font-size: 1vw; text-align: center; width: 90%; background-color: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 10px; max-height: 4em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                    {{item.description}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
             {% else %}
                 <div class="col-sm-12 col-md-12" style="height: 70%;padding-right: 0px;padding-left: 0px;margin-top: 20px;">
                     <div style="height: 100%;width: 100%;">
@@ -125,74 +160,22 @@
 
     <script>
         
-    const buttons = document.querySelectorAll('.toggle-btn');
-    var items = "{% for item in items %}" + "{{item.active}}\n" + "{% endfor %}";
-    items = items.split("\n")
 
-    $(document).ready(function(){
-            $(".toggle-btn").click(function(){
-                var lightId = $(this).data("id");
-                $.ajax({
-                    url: "/button_pressed",
-                    method: "POST",
-                    data: { id: lightId },
-                    success: function(response) {
-                        
-                    }
-                });
-            });
-        });
     $(document).ready(function(){
         $(".remove-button").click(function(){
-            var lightId = $(this).data("id");
+            var id = $(this).data("id");
+            var type = $(this).data("type");
             $.ajax({
-                url: "/remove_button",
+                url: "/remove_log_button",
                 method: "POST",
-                data: { id: lightId},
+                data: { id: id,type:type},
                 success: function(response) {
                     window.location.reload();
                 }
             });
         });
     });
-    $(document).ready(function(){
-        $(".settings-button").click(function(){
-            var lightId = $(this).data("id");
-            var userInput = prompt("Please enter the NEW Device name:");
-            $.ajax({
-                url: "/rename_button",
-                method: "POST",
-                data: { id: lightId,name:userInput },
-                success: function(response) {
-                    window.location.reload();
-                }
-            });
-        });
-    });
-    for (let i = 0; i < items.length; i++) {
-        button = buttons[i]
-        item = items[i]
-        if(item == "True")
-        { 
-            button.classList.toggle('active');
-        }
-    }
-    function addDevice() {
-            var userInput = prompt("Please enter the Device name:");
-            if (userInput) {
-                $.ajax({
-                url: "/add_button",
-                method: "POST",
-                data: { id: userInput },
-                success: function(response) {
-                    window.location.reload();
-                }
-            });
-            } else {
 
-            }
-        }
-    
     function toggleColor(button) {
         button.classList.toggle('active');
         }

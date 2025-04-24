@@ -12,7 +12,11 @@ def login(mysql, email, password):
         return account['id']
     
     return None
-
+def getid(mysql,email):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT * FROM accounts WHERE email = %s', (email,))
+    account = cursor.fetchone()
+    return account['id']
 def create_account(mysql, email, password, nickname='Temp_Nickname', is_confirmed=False):
     """Creates a new account with hashed password and confirmation status"""
     hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')

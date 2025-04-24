@@ -18,7 +18,7 @@ def load_thermostat_config():
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, 'r') as f:
             return json.load(f)
-    return {"device_id": "thermostat001", "settings": {"temperature": 0, "mode": "off", "status": "off"}}
+    return {"device_id": "thermostat001", "settings": {"temperature": 0, "mode": "off", "enabled": True}}
 
 def save_thermostat_config(config):
     with open(CONFIG_PATH, 'w') as f:
@@ -27,7 +27,7 @@ def save_thermostat_config(config):
 def update_settings(value=None):
     global thermostat_config
     temperature = temperature_slider.get()
-    enabled = thermostat_config['settings'].get('status', 'on') == 'on'
+    enabled = thermostat_config['settings'].get('enabled', True) == True
     print(f"Slider temperature: {temperature}, Enabled: {enabled}")
 
     if not enabled:
@@ -44,12 +44,12 @@ def sync_settings_from_file():
     thermostat_config = load_thermostat_config()
     temperature = thermostat_config['settings'].get('temperature', 0)
     mode = thermostat_config['settings'].get('mode', 'off')
-    status = thermostat_config['settings'].get('status', 'off')
+    enabled = thermostat_config['settings'].get('enabled', True)
 
     # Update GUI elements
     temperature_slider.set(temperature)
     temperature_label.config(text=f"Temperature: {temperature}")
-    print(f"Synced settings: Mode={mode}, Temperature={temperature}, Status={status}")
+    print(f"Synced settings: Mode={mode}, Temperature={temperature}, Enabled={enabled}")
 
 def loop_update_settings():
     sync_settings_from_file()
@@ -59,7 +59,7 @@ def loop_update_settings():
 def cool_mode():
     global thermostat_config
     thermostat_config['settings']['mode'] = 'cool'
-    thermostat_config['settings']['status'] = 'on'
+    thermostat_config['settings'][enabled] = True
     save_thermostat_config(thermostat_config)
     update_gui()
     print(f"Thermostat set to Cool mode: {thermostat_config}")
@@ -67,7 +67,7 @@ def cool_mode():
 def off_mode():
     global thermostat_config
     thermostat_config['settings']['mode'] = 'off'
-    thermostat_config['settings']['status'] = 'off'
+    thermostat_config['settings']['enabled'] = False
     thermostat_config['settings']['temperature'] = 0
     save_thermostat_config(thermostat_config)
     update_gui()
@@ -76,7 +76,7 @@ def off_mode():
 def heat_mode():
     global thermostat_config
     thermostat_config['settings']['mode'] = 'heat'
-    thermostat_config['settings']['status'] = 'on'
+    thermostat_config['settings']['enabled'] = True
     save_thermostat_config(thermostat_config)
     update_gui()
     print(f"Thermostat set to Heat mode: {thermostat_config}")

@@ -1,7 +1,6 @@
 {
-    "device_id": "light001",
-    "settings": {
-        "brightness": 44,
-        "enabled": true
-    }
+  "device_id": "light001",
+  "settings": {
+    "brightness": 72
+  }
 }

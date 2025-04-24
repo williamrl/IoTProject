@@ -5,7 +5,6 @@ import os
 
 class Logger:
     def __init__(self, log_file='logs/system_log.log'):
-        
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         self.logger = logging.getLogger('SmartHomeLogger')
         self.logger.setLevel(logging.INFO)
@@ -23,11 +22,13 @@ class Logger:
     def log_user_activity(self, user_id, action, status):
        
         message = f"USER | ID: {user_id} | ACTION: {action} | STATUS: {status}"
+
         self.logger.info(message)
 
     def log_device_activity(self, device_name, event, user_id=None):
        
-        message = f"DEVICE | Name: {device_name} | Event: {event}"
+        message = f"| Name: {device_name} | Event: {event}"
         if user_id:
-            message += f" | User ID: {user_id}"
+            message = f"DEVICE | ID: {user_id} | " + message
+
         self.logger.info(message)

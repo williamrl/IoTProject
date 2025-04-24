@@ -21,20 +21,18 @@
             background: #3d1c4d;
             color: white;
         }
-        .toggle-btn{
-            
-            align-items: center;
-            justify-content: center;
-            
+        .toggle-btn {
             border: 2px solid #3b2498;
             border-radius: 20px;
             cursor: pointer;
             color: rgba(255,255,255,0);
             background: #e68c8c; 
-            width: 20%;
-            height: 20%;
-            margin-right: 40%;
-            margin-left: 40%;
+            width: 60%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
         }.toggle-btn.active {
             background-color: #8ee68c;
         }.remove-button {
@@ -77,24 +75,51 @@
         <div class="row" style="height: 30%;" name = "rowStuff">
             {% if items %}
                 {% for item in items %}
-                <div class="col-sm-12 col-md-12" style="height: 100%;padding-right: 0px;padding-left: 0px;margin-top: 20px;">
-                    <div style="height: 100%;width: 100%;">
-                        <div class="{% if item.type == 'dummy' %}divider-true{% else %}divider-false{% endif %}"
-                            style="padding: 7px; border-radius: 20px; padding-left: 20px; margin: 0; height: 100%;
-                                    border-width: 5px; border-color: rgb(59,36,152); border-top-style: solid;
-                                    border-right-style: outset; border-bottom-style: solid; border-left-style: outset;">
-                            <button class="remove-button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}"><i class="fas fa-trash-alt" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
-                            <button class="settings-button" data-id="{{loop.index0}} " data-deviceid="{{item.deviceid}}"><i class="fas fa-cog" style="width: 100%;height: 100%;font-size: 37px;"></i></i></button>
-                            <div style="width: 100%;height: 100%;"><strong style="display: flex;justify-content: center;align-items: center;font-size: 30px;width: 100%;height: 10%;max-height: 10%;">{{item.name}}</strong>
-                                <div style="width: 100%;height: 20%;"></div><button class="toggle-btn" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}" data-type="{{item.type}}" onclick="toggleColor(this)" type="button"></button>
-                                {% if item.type == "light" %}
-                                    <div style="width: 80%; margin: 10px auto; text-align: center;">
-                                        <div id="slider-value-{{loop.index0}}" style="font-weight: bold;">Value: {{item.value}}</div>
-                                        <input type="range" min="0" max="100" step="1" value="{{ item.value }}"
-                                            class="form-range slider" style="width: 80%;" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
-                                    </div>
-                                {% endif %}
+                <div class="col-sm-12 col-md-12" style="margin-top: 20px; padding: 0;">
+                    <div style="width: 100%;">
+                        <div class="{% if item.type == 'dummy' %}divider-true{% else %}divider-false{% endif %}" 
+                            style="padding: 10px; border-radius: 20px; margin: 0; border: 5px solid rgb(59,36,152);
+                                    border-right-style: outset; border-left-style: outset; display: flex; flex-direction: column; align-items: center;">
+                            
+                            <!-- Top Buttons -->
+                            <div style="width: 100%; display: flex; justify-content: space-between;">
+                                <button class="remove-button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
+                                    <i class="fas fa-trash-alt" style="font-size: 37px;"></i>
+                                </button>
+                                <button class="settings-button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
+                                    <i class="fas fa-cog" style="font-size: 37px;"></i>
+                                </button>
                             </div>
+
+                            <!-- Device Name -->
+                            <strong style="font-size: 30px; text-align: center; width: 100%;">{{item.name}}</strong>
+
+                            <!-- Toggle Button -->
+                            <div style="margin: 10px 0; width: 100%; display: flex; justify-content: center;">
+                                <button class="toggle-btn" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}" data-type="{{item.type}}" onclick="toggleColor(this)" type="button"></button>
+                            </div>
+
+                            <!-- Light Controls -->
+                            {% if item.type == "light" %}
+                            <div style="width: 90%; text-align: center;">
+                                <div id="slider-value-{{loop.index0}}" style="font-weight: bold;">Value: {{item.value}}</div>
+                                <input type="range" min="0" max="100" step="1" value="{{ item.value }}"
+                                    class="form-range slider" style="width: 100%;" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
+                            </div>
+                            {% endif %}
+
+                            <!-- Thermostat Controls -->
+                            {% if item.type == "thermostat" %}
+                            <div style="width: 90%; text-align: center;">
+                                <div id="slider-value-{{loop.index0}}" style="font-weight: bold;">Value: {{item.value}}</div>
+                                <input type="range" min="0" max="100" step="1" value="{{ item.value }}"
+                                    class="form-range slider" style="width: 100%;" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}">
+                                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                                    <button class="btn btn-danger" type="button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}" onclick="setHot(this)">Hot</button>
+                                    <button class="btn btn-primary" type="button" data-id="{{loop.index0}}" data-deviceid="{{item.deviceid}}" onclick="setCold(this)">Cold</button>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
