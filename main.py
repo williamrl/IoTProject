@@ -42,15 +42,16 @@ with app.app_context():
 logsDict = {}
 
 def logUserAction(user_id,action,status,priority = False):
+    user_id = int(user_id)
     now = datetime.datetime.now()
     date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     logger.log_user_activity(user_id=user_id, action=action, status=status)
-    print(logsDict)
     if(user_id not in logsDict):
         logsDict[user_id] = [{'name': "User Action:",'date': date_time_str,'description': f"{action}, {status}",'priority':priority}]
     else:
         logsDict[user_id].append({'name': "User Action:",'date': date_time_str,'description': f"{action}, {status}",'priority':priority})
 def logDeviceAction(device_name, event, user_id=None ,priority = False):
+    user_id = int(user_id)
     now = datetime.datetime.now()
     date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     logger.log_device_activity(device_name=device_name, event=event, user_id=user_id)
@@ -161,6 +162,15 @@ def register_device():
     device_manager.register_device(mysql, user_id, device_id)
     return 'added'
 
+@app.route('/camera_alert', methods=['POST'])
+def camera_alert():
+    print("Alerting...")
+    device_id = request.form['device_id']
+    user_id = request.form['user_id']
+    print("Alerting...")
+    logDeviceAction(device_name=device_id, event="Camera Motion Triggered!", user_id=user_id,priority=True)
+    return 'added'
+    
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
@@ -335,6 +345,22 @@ def home():
                 user_id=session.get('user_id', 'unknown')
                 )
                 realDeviceList.insert(0,deviceData)
+
+        elif(deviceid == "camera001"):
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                enabled = config.get("settings", {}).get("enabled", True)
+            else:
+                enabled = True  # Default value if file doesn't exist
+            deviceData = {'id':device,'name':device,'active': True,'type':"camera",'deviceid': device,'value':enabled}
+            if not any(d['id'] == deviceData['id'] for d in dummyDeviceList[id]):
+                logDeviceAction(
+                device_name=deviceid,
+                event=f"Added device: {device}",
+                user_id=session.get('user_id', 'unknown')
+                )
+                realDeviceList.insert(0,deviceData)
         elif(deviceid == "thermostat001"):
             if os.path.exists(config_path):
                 print("Exists")
@@ -368,6 +394,14 @@ def home():
             else:
                 brightness = 50  # Default value if file doesn't exist
             device['value'] = brightness
+        elif(device['type'] == "camera"):
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                enabled = config.get("settings", {}).get("enabled", True)
+            else:
+                enabled = True  # Default value if file doesn't exist
+            device['value'] = enabled
         elif(device['type'] == "thermostat"):
             print("thermo time")
             if os.path.exists(config_path):

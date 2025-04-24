@@ -45,7 +45,8 @@ def sync_settings_from_file():
     temperature = thermostat_config['settings'].get('temperature', 0)
     mode = thermostat_config['settings'].get('mode', 'off')
     enabled = thermostat_config['settings'].get('enabled', True)
-
+    if not enabled:
+        temperature = 0
     # Update GUI elements
     temperature_slider.set(temperature)
     temperature_label.config(text=f"Temperature: {temperature}")
