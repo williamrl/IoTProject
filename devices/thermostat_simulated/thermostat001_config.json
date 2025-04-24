@@ -1,7 +1,7 @@
 {
   "device_id": "thermostat001",
   "settings": {
-    "temperature": 63,
+    "temperature": 77,
     "mode": "heat",
     "status": "on"
   }

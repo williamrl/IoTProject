@@ -266,7 +266,11 @@ def home():
             dummyDeviceList[id] = []
             addedDevices[id] = []
     account = user_manager.get_account(mysql, session['user_id'])
-    username = account['email'].split('@')[0]
+    try:
+        username = account['email'].split('@')[0]
+    except:
+        session.pop('user_id')
+        return redirect('/')
     device_ids = device_manager.get_device_ids(mysql, session['user_id'])
     realDeviceList = []
     for device in device_ids:

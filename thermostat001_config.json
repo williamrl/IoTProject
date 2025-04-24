@@ -1,6 +1,7 @@
 {
-  "device_id": "thermostat001",
-  "settings": {
-    "temperature": 61
-  }
+    "device_id": "thermostat001",
+    "settings": {
+        "temperature": 61,
+        "brightness": 53
+    }
 }
