@@ -60,7 +60,7 @@ def loop_update_settings():
 def cool_mode():
     global thermostat_config
     thermostat_config['settings']['mode'] = 'cool'
-    thermostat_config['settings'][enabled] = True
+    thermostat_config['settings']['enabled'] = True
     save_thermostat_config(thermostat_config)
     update_gui()
     print(f"Thermostat set to Cool mode: {thermostat_config}")

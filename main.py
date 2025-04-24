@@ -42,7 +42,7 @@ with app.app_context():
 logsDict = {}
 
 def logUserAction(user_id,action,status,priority = False):
-    user_id = int(user_id)
+    user_id = (user_id)
     now = datetime.datetime.now()
     date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     logger.log_user_activity(user_id=user_id, action=action, status=status)
