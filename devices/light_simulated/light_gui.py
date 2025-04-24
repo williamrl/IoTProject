@@ -105,4 +105,5 @@ brightness_label = tk.Label(slider_frame, text=f"Brightness: {light_config['sett
 brightness_label.pack()
 
 loop_update_settings() 
-root.withdraw()
+# root.withdraw()
+root.mainloop()

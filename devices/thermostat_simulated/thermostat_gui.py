@@ -18,55 +18,76 @@ def load_thermostat_config():
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, 'r') as f:
             return json.load(f)
-    return {"device_id": "thermostat001", "settings": {}}
+    return {"device_id": "thermostat001", "settings": {"temperature": 0, "mode": "off", "status": "off"}}
 
 def save_thermostat_config(config):
     with open(CONFIG_PATH, 'w') as f:
         json.dump(config, f, indent=2)
 
-def rgb_to_color(rgb):
-    return '#%02x%02x%02x' % rgb
-
 def update_settings(value=None):
-    global oval_id, rect_id
+    global thermostat_config
     temperature = temperature_slider.get()
-    enabled = bool(thermostat_config['settings'].get('enabled', True))
-    print(temperature)
-    if enabled == False:
+    enabled = thermostat_config['settings'].get('status', 'on') == 'on'
+    print(f"Slider temperature: {temperature}, Enabled: {enabled}")
+
+    if not enabled:
         temperature = 0
+
     thermostat_config['settings']['temperature'] = temperature
     save_thermostat_config(thermostat_config)
-
-    # thermostat_canvas.itemconfig(oval_id, fill=rgb_to_color((int(temperature/100 * 160)+95,int(temperature/100 * 160)+95,0)))
-    # thermostat_canvas.itemconfig(rect_id, fill="silver")
-    thermostat_canvas.itemconfig(temperature_text, text=str(temperature) + '°')
-    temperature_label.config(text=f"Temperature: {thermostat_config['settings']['temperature']}")
-    print(CONFIG_PATH)
-    print(f"Updated thermostat001 settings: {thermostat_config['settings']}")
+    update_gui()
+    print(f"Updated thermostat settings: {thermostat_config}")
 
 def sync_settings_from_file():
-    print("Updating...")
-    global thermostat_config, oval_id, rect_id
-    new_config = load_thermostat_config()
-    temperature = new_config['settings'].get('temperature', 0)
-    enabled = bool(new_config['settings'].get('enabled', True))
-    print(temperature)
-    # Only update if temperature actually changed
-    if enabled == False:
-        temperature = 0
-    thermostat_config = new_config
+    global thermostat_config
+    print("Syncing settings from file...")
+    thermostat_config = load_thermostat_config()
+    temperature = thermostat_config['settings'].get('temperature', 0)
+    mode = thermostat_config['settings'].get('mode', 'off')
+    status = thermostat_config['settings'].get('status', 'off')
 
-    # thermostat_canvas.itemconfig(
-    #     oval_id,
-    #     fill=rgb_to_color((int(temperature/100 * 160)+95, int(temperature/100 * 160)+95, 0))
-    # )
+    # Update GUI elements
+    temperature_slider.set(temperature)
     temperature_label.config(text=f"Temperature: {temperature}")
-        
-        
+    print(f"Synced settings: Mode={mode}, Temperature={temperature}, Status={status}")
+
 def loop_update_settings():
-    print(CONFIG_PATH)
     sync_settings_from_file()
     root.after(1000, loop_update_settings)
+
+# Button functionality
+def cool_mode():
+    global thermostat_config
+    thermostat_config['settings']['mode'] = 'cool'
+    thermostat_config['settings']['status'] = 'on'
+    save_thermostat_config(thermostat_config)
+    update_gui()
+    print(f"Thermostat set to Cool mode: {thermostat_config}")
+
+def off_mode():
+    global thermostat_config
+    thermostat_config['settings']['mode'] = 'off'
+    thermostat_config['settings']['status'] = 'off'
+    thermostat_config['settings']['temperature'] = 0
+    save_thermostat_config(thermostat_config)
+    update_gui()
+    print(f"Thermostat turned Off: {thermostat_config}")
+
+def heat_mode():
+    global thermostat_config
+    thermostat_config['settings']['mode'] = 'heat'
+    thermostat_config['settings']['status'] = 'on'
+    save_thermostat_config(thermostat_config)
+    update_gui()
+    print(f"Thermostat set to Heat mode: {thermostat_config}")
+
+def update_gui():
+    mode = thermostat_config['settings'].get('mode', 'off')
+    temperature = thermostat_config['settings'].get('temperature', 'N/A')
+    temperature_label.config(text=f"Temperature: {temperature}")
+    thermostat_canvas.itemconfig(temperature_text, text=str(temperature) + '°')
+    print(f"Updated GUI with mode: {mode}, temperature: {temperature}")
+
 # Load thermostat001 configuration
 thermostat_config = load_thermostat_config()
 
@@ -79,17 +100,15 @@ main_frame = tk.Frame(root)
 main_frame.pack()
 
 thermostat_canvas = tk.Canvas(main_frame, width=300, height=500)
-
-# oval_id = thermostat_canvas.create_oval(50, 100, 250, 320, fill=rgb_to_color((95,95,0)))
-# rect_id = thermostat_canvas.create_rectangle(100, 300, 200, 500, fill="silver")
-temperature_text = thermostat_canvas.create_text(175, 200, text='0°', font=('',50))
+temperature_text = thermostat_canvas.create_text(175, 200, text='0°', font=('', 50))
 thermostat_canvas.pack(side=tk.LEFT)
 
-cool_button = tk.Button(main_frame, text='Cool', width=8, height=4)
+# Buttons for Cool, Off, and Heat modes
+cool_button = tk.Button(main_frame, text='Cool', width=8, height=4, command=cool_mode)
 cool_button.place(x=70, y=300)
-off_button = tk.Button(main_frame, text='Off', width=8, height=4)
+off_button = tk.Button(main_frame, text='Off', width=8, height=4, command=off_mode)
 off_button.place(x=135, y=300)
-heat_button = tk.Button(main_frame, text='Heat', width=8, height=4)
+heat_button = tk.Button(main_frame, text='Heat', width=8, height=4, command=heat_mode)
 heat_button.place(x=200, y=300)
 
 slider_frame = tk.Frame(main_frame)
@@ -113,5 +132,5 @@ slider_frame.pack(side=tk.RIGHT)
 temperature_label = tk.Label(slider_frame, text=f"Temperature: {thermostat_config['settings'].get('temperature', 'N/A')}")
 temperature_label.pack()
 
-loop_update_settings() 
-root.withdraw()
+loop_update_settings()
+root.mainloop()
