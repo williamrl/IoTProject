@@ -110,11 +110,11 @@ def logs():
 @app.route('/settings', methods=['GET','POST'])
 def settings():
     if request.method == 'GET':
-        logger.log_user_activity(user_id=user_id, action="view settings", status="success")
+        logger.log_user_activity(user_id = session['user_id'], action="view settings", status="success")
         return render_template('settings.html', message="",dark_mode=session.get('dark_mode', False))
     if request.method == 'POST':
         session.pop('user_id')
-        logger.log_user_activity(user_id=user_id, action="logout via settings", status="success")
+        logger.log_user_activity(user_id = session['user_id'], action="logout via settings", status="success")
         return redirect('/')
     
 @app.route('/toggle-dark-mode', methods=['POST'])

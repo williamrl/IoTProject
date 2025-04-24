@@ -1,0 +1,12 @@
+[2025-04-23 21:01:35] INFO | USER | ID: guest | ACTION: visit index | STATUS: viewed
+[2025-04-23 21:01:56] INFO | USER | ID: wrl5127@psu.edu | ACTION: register | STATUS: unconfirmed
+[2025-04-23 21:01:58] INFO | USER | ID: guest | ACTION: visit index | STATUS: viewed
+[2025-04-23 21:02:53] INFO | USER | ID: wrl5127@psu.edu | ACTION: email confirmed | STATUS: success
+[2025-04-23 21:02:55] INFO | USER | ID: guest | ACTION: visit index | STATUS: viewed
+[2025-04-23 21:02:58] INFO | USER | ID: 7 | ACTION: login | STATUS: success
+[2025-04-23 21:02:58] INFO | USER | ID: 7 | ACTION: viewed home | STATUS: success
+[2025-04-23 21:04:50] INFO | USER | ID: 7 | ACTION: view logs | STATUS: success
+[2025-04-23 21:04:51] INFO | USER | ID: 7 | ACTION: viewed home | STATUS: success
+[2025-04-23 21:04:56] INFO | USER | ID: 7 | ACTION: viewed home | STATUS: success
+[2025-04-23 21:05:02] INFO | DEVICE | Name:  | Event: Renamed to  | User ID: 7
+[2025-04-23 21:05:02] INFO | USER | ID: 7 | ACTION: viewed home | STATUS: success
