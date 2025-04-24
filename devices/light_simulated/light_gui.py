@@ -30,14 +30,15 @@ def rgb_to_color(rgb):
 def update_settings(value=None):
     global oval_id, rect_id
     brightness = brightness_slider.get()
-    enabled = bool(light_config['settings'].get('enabled', True))
-    print(brightness)
-    if enabled == False:
-        brightness = 0
+    enabled = brightness > 0  # Determine if the light should be "on" or "off"
+    
+    # Update the status based on brightness
+    light_config['settings']['status'] = 'on' if enabled else 'off'
     light_config['settings']['brightness'] = brightness
     save_light_config(light_config)
 
-    light_canvas.itemconfig(oval_id, fill=rgb_to_color((int(brightness/100 * 160)+95,int(brightness/100 * 160)+95,0)))
+    # Update the GUI elements
+    light_canvas.itemconfig(oval_id, fill=rgb_to_color((int(brightness / 100 * 160) + 95, int(brightness / 100 * 160) + 95, 0)))
     light_canvas.itemconfig(rect_id, fill="silver")
     brightness_label.config(text=f"Brightness: {light_config['settings']['brightness']}")
     print(CONFIG_PATH)
@@ -105,5 +106,5 @@ brightness_label = tk.Label(slider_frame, text=f"Brightness: {light_config['sett
 brightness_label.pack()
 
 loop_update_settings() 
-# root.withdraw()
-root.mainloop()
+root.withdraw()
+# root.mainloop()

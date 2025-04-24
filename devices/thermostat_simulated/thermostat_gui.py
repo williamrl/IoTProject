@@ -133,4 +133,5 @@ temperature_label = tk.Label(slider_frame, text=f"Temperature: {thermostat_confi
 temperature_label.pack()
 
 loop_update_settings()
-root.mainloop()
+root.withdraw()
+# root.mainloop()
