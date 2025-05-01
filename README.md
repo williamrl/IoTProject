@@ -11,3 +11,10 @@ Hello! This is our project for the CMPSC 487W course at Penn State Abington. Pit
    CREATE USER 'SmartHome'@'localhost' IDENTIFIED BY 'SmartHomePassword';
    GRANT ALL PRIVILEGES ON *.* TO 'SmartHome'@'localhost' WITH GRANT OPTION;
 3. Install the libraries in the requirements.txt using pip, or some other cmdlet. 
+4. Download the project from the GitHub. Ensure that the terminal is in a location where the Command Prompt can access.
+## Use Guide
+1. Run the Main file.
+2. Ctrl Click on the IP Address that is outputted in the log.
+3. To run a Simulated Device, you must use a seperate terminal. Go to the Devices folder, choose a device, and run the 'simulated_device.py' file in a seperate terminal. If using Visual Code Studio, this can be done by clicking on the drop arrow next to the Run Program button.
+## Known Issues
+- Currently, the only way to un-link a Simulated Device from a user is to delete the 'user.session' file from the designated folder.
