@@ -2,3 +2,15 @@ flask
 flask-mysqldb
 flask-mail
 itsdangerous
+mysqlclient
+bcrypt
+flask
+flask-mysqldb
+flask-mail
+itsdangerous
+mysqlclient
+bcrypt
+paho-mqtt
+pycryptodome
+requests
+pika
