@@ -9,9 +9,9 @@ Hello! This is our project for the CMPSC 487W course at Penn State Abington. Pit
    - https://www.rabbitmq.com/tutorials/tutorial-one-python
 2. In the MySQL Workbench in a local instance, input the following SQL commands:
 
-   ```CREATE USER 'SmartHome'@'localhost' IDENTIFIED BY 'SmartHomePassword';```
+```CREATE USER 'SmartHome'@'localhost' IDENTIFIED BY 'SmartHomePassword';```
    
-  ```GRANT ALL PRIVILEGES ON *.* TO 'SmartHome'@'localhost' WITH GRANT OPTION;```
+```GRANT ALL PRIVILEGES ON *.* TO 'SmartHome'@'localhost' WITH GRANT OPTION;```
    
 4. Install the libraries in the requirements.txt using pip, or some other cmdlet. 
 5. Download the project from the GitHub. Ensure that the terminal is in a location where the Command Prompt can access.
